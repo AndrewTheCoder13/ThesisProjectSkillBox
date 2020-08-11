@@ -1,14 +1,17 @@
 package main.model;
 
+import lombok.Data;
+
 import javax.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "post_votes")
+@Data
 public class PostVote {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
     private int id;
 
@@ -21,49 +24,9 @@ public class PostVote {
     private Post post;
 
     @Column(nullable = false)
-    private Date time;
+    private LocalDateTime time;
 
     @Column(nullable = false)
     private byte value;
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public Post getPost() {
-        return post;
-    }
-
-    public void setPost(Post post) {
-        this.post = post;
-    }
-
-    public Date getTime() {
-        return time;
-    }
-
-    public void setTime(Date time) {
-        this.time = time;
-    }
-
-    public byte getValue() {
-        return value;
-    }
-
-    public void setValue(byte value) {
-        this.value = value;
-    }
 
 }
