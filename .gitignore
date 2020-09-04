@@ -1,3 +1,38 @@
+Skip to content
+Search or jump to…
+
+Pull requests
+Issues
+Marketplace
+Explore
+ 
+@AndrewTheCoder13 
+Learn Git and GitHub without any code!
+Using the Hello World guide, you’ll start a branch, write comments, and open a pull request.
+
+
+AndrewTheCoder13
+/
+ThesisProjectSkillBox
+0
+00
+Code
+Issues
+Pull requests
+Actions
+Projects
+Wiki
+Security
+Insights
+More
+ThesisProjectSkillBox/.gitignore
+@BestRubick
+BestRubick gitIgnore
+Latest commit 9c3f26f on 28 Jul
+ History
+ 1 contributor
+146 lines (111 sloc)  2.7 KB
+  
 
 # Created by https://www.toptal.com/developers/gitignore/api/intellij+all,java,windows
 # Edit at https://www.toptal.com/developers/gitignore?templates=intellij+all,java,windows
@@ -144,3 +179,15 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/intellij+all,java,windows
+© 2020 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Help
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About
