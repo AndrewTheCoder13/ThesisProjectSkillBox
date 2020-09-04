@@ -1,18 +1,43 @@
 package main.controller;
 
-import main.api.response.CheckResponse;
 import main.api.response.InitResponse;
+import main.api.response.settings.GlobalSettingsResponse;
+import main.api.response.tags.TagResponse;
+import main.api.response.tags.Tags;
+import main.model.GlobalSetting;
+import main.model.Tag;
 import main.repository.GlobalSettingsRepository;
+import main.repository.PostRepository;
+import main.repository.Tag2PostRepository;
+import main.repository.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.TreeMap;
 
 @RestController("/api")
 public class ApiGeneralController {
 
+    @Autowired
+    private GlobalSettingsRepository globalSettingsRepository;
+
+    @Autowired
+    private TagRepository tagRepository;
+
+    @Autowired
+    private PostRepository postRepository;
+
+    @Autowired
+    private Tag2PostRepository tag2PostRepository;
+
     @GetMapping("/api/init")
-    public ResponseEntity<InitResponse> init(){
+    public ResponseEntity<InitResponse> init() {
         InitResponse response = new InitResponse();
         response.setTitle("DevPub");
         response.setSubtitle("Рассказы разработчиков");
@@ -24,14 +49,30 @@ public class ApiGeneralController {
     }
 
     @GetMapping("/api/settings")
-    public ResponseEntity<String> settings(){
-        return ResponseEntity.ok().body("{MULTIUSER_MODE: true, " +
-                "POST_PREMODERATION: true, STATISTICS_IS_PUBLIC: true}");
+    public ResponseEntity<TreeMap<String, Boolean>> settings() {
+        Iterable<GlobalSetting> settings = globalSettingsRepository.findAll();
+        GlobalSettingsResponse responseObject = new GlobalSettingsResponse(settings);
+        TreeMap<String, Boolean> finalResponse = responseObject.getSettings();
+        return ResponseEntity.ok().body(finalResponse);
     }
 
     @GetMapping("/api/tag")
-    public ResponseEntity<String> tag(){
-        return ResponseEntity.ok().body("{tags: []}");
+    public ResponseEntity<Tags> tag(@RequestParam(required = false) String query) {
+        if (query == null){
+            HashMap<Tag, Integer> tag2Count = new HashMap<>();
+            Iterable<Tag> allTags = tagRepository.findAll();
+            allTags.forEach(tag -> tag2Count.put(tag, tag2PostRepository.countOfPostsByTagId(tag.getId())));
+            long countOfPosts = postRepository.count();
+            Tags tags = new Tags(countOfPosts, tag2Count);
+            return ResponseEntity.ok().body(tags);
+        } else {
+            HashMap<Tag, Integer> tag2Count = new HashMap<>();
+            List<Tag> allTags = tagRepository.searchTagByQuery(query);
+            allTags.forEach(tag -> tag2Count.put(tag, tag2PostRepository.countOfPostsByTagId(tag.getId())));
+            long countOfPosts = postRepository.count();
+            Tags tags = new Tags(countOfPosts, tag2Count);
+            return ResponseEntity.ok().body(tags);
+        }
     }
 
 }

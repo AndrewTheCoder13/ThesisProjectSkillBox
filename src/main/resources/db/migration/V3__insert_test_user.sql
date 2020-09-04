@@ -1,0 +1,1 @@
+insert into users (id, is_moderator, reg_time, name, email, password) values (1, 1, CAST('2020-08-24 13:48:06.427' AS DateTime), "Андрей", "bahaagamer@mail.ru", "testpassword")
