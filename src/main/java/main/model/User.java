@@ -5,6 +5,7 @@ import lombok.Data;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.util.List;
 
 
 @Entity
@@ -37,6 +38,10 @@ public class User
     private String code;
 
     private String photo;
+
+    @OneToMany
+    @JoinColumn(name = "user_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private List<Post> userPosts;
 
 
 }

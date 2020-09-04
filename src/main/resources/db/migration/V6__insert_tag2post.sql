@@ -1,0 +1,1 @@
+insert into tag2post (id, post_id, tag_id) values (1, 1, 1)
