@@ -30,7 +30,7 @@ public class GetPostResponse {
         this.tags = new ArrayList<>();
         active = true;
         id = post.getId();
-        timestamp = Timestamp.valueOf(post.getTime()).getTime();
+        timestamp = Timestamp.valueOf(post.getTime()).getTime() / 1000;
         user = new UserForPost(post.getUser());
         title = post.getTitle();
         text = post.getText();
@@ -40,4 +40,5 @@ public class GetPostResponse {
         postComments.stream().map(CommentForPost::new).forEach(commentForPost -> comments.add(commentForPost));
         tags.forEach(tagToPost -> this.tags.add(tagToPost.getTag().getName()));
     }
+
 }

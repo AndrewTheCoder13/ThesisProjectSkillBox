@@ -12,4 +12,5 @@ public class UserForPost {
         id = user.getId();
         name = user.getName();
     }
+
 }

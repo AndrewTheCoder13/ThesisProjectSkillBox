@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class InitResponse {
 
+
     private String title;
 
     private String subtitle;

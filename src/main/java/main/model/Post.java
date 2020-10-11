@@ -69,4 +69,5 @@ public class Post{
     public int getLikeCount(){
         return likeVotes.size();
     }
+
 }

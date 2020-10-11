@@ -27,4 +27,5 @@ public class Tags {
         double finalMaxWeight = maxWeight;
         tags.forEach(tag -> tag.setWeight(tag.getWeight() / finalMaxWeight));
     }
+
 }

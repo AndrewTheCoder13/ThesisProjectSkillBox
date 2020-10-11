@@ -11,17 +11,17 @@ public class PostsResponse {
     private int count;
     private List<SearchPostResponse> posts;
 
-    public static PostsResponse getEmptyResonse(){
+    public static PostsResponse getEmptyResonse() {
         PostsResponse response = new PostsResponse();
         response.setCount(0);
         return response;
     }
 
-    public PostsResponse(){
+    public PostsResponse() {
         posts = new ArrayList<>();
     }
 
-    public PostsResponse(List<Post> postsByTag){
+    public PostsResponse(List<Post> postsByTag) {
         posts = new ArrayList<>();
         count = postsByTag.size();
         postsByTag.forEach(post -> {
@@ -29,4 +29,5 @@ public class PostsResponse {
             posts.add(postResponse);
         });
     }
+
 }

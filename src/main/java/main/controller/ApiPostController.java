@@ -6,6 +6,7 @@ import main.model.Post;
 import main.model.PostComment;
 import main.model.TagToPost;
 import main.repository.*;
+import main.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,101 +20,46 @@ import java.util.*;
 public class ApiPostController {
 
     @Autowired
-    private PostRepository postRepository;
-
-    @Autowired
-    private PostCommentRepository postCommentRepository;
-
-    @Autowired
-    private Tag2PostRepository tag2PostRepository;
-
-    @Autowired
-    private TagRepository tagRepository;
+    private PostService postService;
 
     @GetMapping("/api/post")
-    public ResponseEntity<PostsResponse> post(@RequestParam Map<String, String> allParams){
+    public ResponseEntity<PostsResponse> post(@RequestParam Map<String, String> allParams) {
         int offset = Integer.parseInt(allParams.get("offset"));
         int limit = Integer.parseInt(allParams.get("limit"));
         String mode = allParams.get("mode");
         Pageable pageable = null;
-        switch (mode){
-            case "recent": pageable = PageRequest.of(offset, limit, new Sort(Sort.Direction.DESC, "time"));
-                           break;
-            case "early": pageable = PageRequest.of(offset, limit, new Sort(Sort.Direction.ASC, "time"));
-                           break;
-            case "popular": {
-                ArrayList<Post> posts = (ArrayList<Post>)postRepository.findAll();
-                posts.sort(Comparator.comparing(Post::getPostCommentsSize).reversed() );
-                int begin = offset * limit;
-                int end = 0;
-                end = begin + limit > posts.size() ? (begin + limit) - posts.size() - 2 : begin + limit;
-                List<Post> post = posts.subList(begin, end);
-                PostsResponse response = new PostsResponse(post);
-                return ResponseEntity.ok().body(response);
-            }
+        switch (mode) {
+            case "recent":
+                pageable = PageRequest.of(offset, limit, new Sort(Sort.Direction.DESC, "time"));
+                break;
+            case "early":
+                pageable = PageRequest.of(offset, limit, new Sort(Sort.Direction.ASC, "time"));
+                break;
+            case "popular":
             case "best": {
-                ArrayList<Post> posts = (ArrayList<Post>)postRepository.findAll();
-                posts.sort(Comparator.comparing(Post::getLikeCount).reversed() );
-                int begin = offset * limit;
-                int end = 0;
-                end = begin + limit > posts.size() ? (begin + limit) - posts.size() - 2 : begin + limit;
-                List<Post> post = posts.subList(begin, end);
-                PostsResponse response = new PostsResponse(post);
-                return ResponseEntity.ok().body(response);
+                return postService.selectWithMode(offset, limit, mode);
             }
         }
-        Iterable<Post> posts = postRepository.finAllWithPageable(pageable);
-        PostsResponse response = new PostsResponse((ArrayList<Post>) posts);
-        return ResponseEntity.ok().body(response);
+        return ResponseEntity.ok().body(postService.findAllWithPageable(pageable));
     }
 
     @GetMapping("api/post/{id}")
-    public ResponseEntity<GetPostResponse> getPost(@PathVariable int id){
-        Optional<Post> optionalPost = postRepository.findById(id);
-        Post gettedPost = new Post();
-        if(optionalPost.isPresent()){
-            gettedPost = optionalPost.get();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-        List<TagToPost> tags = tag2PostRepository.findPostById(id);
-        List<PostComment> postComments = postCommentRepository.findByPostId(id);
-        GetPostResponse response = new GetPostResponse();
-        response.formatingAnswer(gettedPost, postComments, tags);
-        return ResponseEntity.ok().body(response);
+    public ResponseEntity<GetPostResponse> getPost(@PathVariable int id) {
+        return postService.findById(id);
     }
 
     @GetMapping("api/post/byTag")
-    public ResponseEntity<PostsResponse> getPostByTag(@RequestParam Map<String, String> allParams){
-        int offset = Integer.parseInt(allParams.get("offset"));
-        int limit = Integer.parseInt(allParams.get("limit"));
-        String tagName = allParams.get("tag");
-        int tagId = tagRepository.getTagByName(tagName).getId();
-        Pageable pageable = PageRequest.of(offset, limit);
-        ArrayList<TagToPost> postsToTag = (ArrayList<TagToPost>) tag2PostRepository.findPostsByTag(tagId, pageable);
-        if(postsToTag.size() == 0){
-            return ResponseEntity.ok().body(PostsResponse.getEmptyResonse());
-        }
-        ArrayList<Post> postsByTag = new ArrayList<>();
-        postsToTag.forEach(tagToPost -> postsByTag.add(tagToPost.getPost()));
-        PostsResponse response = new PostsResponse(postsByTag);
-        return ResponseEntity.ok().body(response);
+    public ResponseEntity<PostsResponse> getPostByTag(@RequestParam Map<String, String> allParams) {
+        return postService.getPostByTag(allParams);
     }
 
     @GetMapping("/api/post/search")
-    public ResponseEntity<PostsResponse> searchPosts(@RequestParam Map<String, String> allParams){
-        int offset = Integer.parseInt(allParams.get("offset"));
-        int limit = Integer.parseInt(allParams.get("limit"));
-        String query = allParams.get("query");
-        Pageable pageable = PageRequest.of(offset, limit);
-        if(query == null){
-            Iterable<Post> posts = postRepository.finAllWithPageable(pageable);
-            PostsResponse response = new PostsResponse((ArrayList<Post>) posts);
-            return ResponseEntity.ok().body(response);
-        } else {
-            ArrayList<Post> posts = postRepository.searchPostsByQuery(query, pageable);
-            PostsResponse response = new PostsResponse(posts);
-            return ResponseEntity.ok().body(response);
-        }
+    public ResponseEntity<PostsResponse> searchPosts(@RequestParam Map<String, String> allParams) {
+        return postService.searchPosts(allParams);
+    }
+
+    @GetMapping("/api/post/byDate")
+    public ResponseEntity<PostsResponse> getPostsByDate(@RequestParam Map<String, String> allParams){
+        return postService.searchPostsByDate(allParams);
     }
 }

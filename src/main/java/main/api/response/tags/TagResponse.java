@@ -11,4 +11,5 @@ public class TagResponse {
         this.name = name;
         this.weight = weight;
     }
+
 }

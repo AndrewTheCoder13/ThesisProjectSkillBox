@@ -15,8 +15,9 @@ public class CommentForPost {
 
     public CommentForPost(PostComment comment){
         id = comment.getId();
-        timestamp = Timestamp.valueOf(comment.getTime()).getTime();
+        timestamp = Timestamp.valueOf(comment.getTime()).getTime() / 1000;
         text = comment.getText();
         user = new UserForComment(comment.getUser());
     }
+
 }

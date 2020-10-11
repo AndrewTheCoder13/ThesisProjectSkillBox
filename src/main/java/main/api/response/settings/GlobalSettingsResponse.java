@@ -14,4 +14,5 @@ public class GlobalSettingsResponse {
         this.settings = new TreeMap<>();
         settings.forEach(s -> this.settings.put(s.getCode(), s.getValue().equals("YES")? true : false));
     }
+
 }

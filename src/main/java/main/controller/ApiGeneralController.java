@@ -10,6 +10,7 @@ import main.repository.GlobalSettingsRepository;
 import main.repository.PostRepository;
 import main.repository.Tag2PostRepository;
 import main.repository.TagRepository;
+import main.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,13 +29,7 @@ public class ApiGeneralController {
     private GlobalSettingsRepository globalSettingsRepository;
 
     @Autowired
-    private TagRepository tagRepository;
-
-    @Autowired
-    private PostRepository postRepository;
-
-    @Autowired
-    private Tag2PostRepository tag2PostRepository;
+    private TagService tagService;
 
     @GetMapping("/api/init")
     public ResponseEntity<InitResponse> init() {
@@ -58,21 +53,8 @@ public class ApiGeneralController {
 
     @GetMapping("/api/tag")
     public ResponseEntity<Tags> tag(@RequestParam(required = false) String query) {
-        if (query == null){
-            HashMap<Tag, Integer> tag2Count = new HashMap<>();
-            Iterable<Tag> allTags = tagRepository.findAll();
-            allTags.forEach(tag -> tag2Count.put(tag, tag2PostRepository.countOfPostsByTagId(tag.getId())));
-            long countOfPosts = postRepository.count();
-            Tags tags = new Tags(countOfPosts, tag2Count);
-            return ResponseEntity.ok().body(tags);
-        } else {
-            HashMap<Tag, Integer> tag2Count = new HashMap<>();
-            List<Tag> allTags = tagRepository.searchTagByQuery(query);
-            allTags.forEach(tag -> tag2Count.put(tag, tag2PostRepository.countOfPostsByTagId(tag.getId())));
-            long countOfPosts = postRepository.count();
-            Tags tags = new Tags(countOfPosts, tag2Count);
-            return ResponseEntity.ok().body(tags);
-        }
+        return ResponseEntity.ok().body(tagService.getTags(query));
     }
+
 
 }

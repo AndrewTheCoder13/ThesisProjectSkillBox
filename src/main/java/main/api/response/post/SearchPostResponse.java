@@ -1,14 +1,19 @@
 package main.api.response.post;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 import main.api.response.user.UserForPost;
 import main.model.Post;
+import org.jsoup.Jsoup;
 
 import java.sql.Timestamp;
 
 @Data
 public class SearchPostResponse {
     private int id;
+    @JsonSerialize
+    @JsonDeserialize
     private long timestamp;
     private String title;
     private String announce;
@@ -20,9 +25,10 @@ public class SearchPostResponse {
 
     public SearchPostResponse(Post post){
         id = post.getId();
-        timestamp = Timestamp.valueOf(post.getTime()).getTime();
+        timestamp = Timestamp.valueOf(post.getTime()).getTime() / 1000;
         title = post.getTitle();
-        announce = post.getText();
+        announce = Jsoup.parse(post.getText()).text();
+        announce = announce.length() < 200 ? post.getText() : announce.substring(0, 200);
         likeCount = post.getLikeVotes().size();
         dislikeCount = post.getDislikeVotes().size();
         viewCount = post.getViewCount();
