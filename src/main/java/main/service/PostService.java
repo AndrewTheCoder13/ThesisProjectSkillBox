@@ -42,7 +42,7 @@ public class PostService {
             return ResponseEntity.ok().body(findAllWithPageable(pageable));
         } else {
             ArrayList<Post> posts = postRepository.searchPostsByQuery(query, LocalDateTime.now(), pageable);
-            PostsResponse response = posts == null? PostsResponse.getEmptyResonse() : new PostsResponse(posts);
+            PostsResponse response = posts == null ? PostsResponse.getEmptyResonse() : new PostsResponse(posts);
             return ResponseEntity.ok().body(response);
         }
     }
@@ -82,12 +82,69 @@ public class PostService {
         return ResponseEntity.ok().body(response);
     }
 
-    public ResponseEntity<PostsResponse> searchPostsByDate(Map<String, String> allParams){
+    public ResponseEntity<PostsResponse> searchPostsByDate(Map<String, String> allParams) {
         int offset = Integer.parseInt(allParams.get("offset"));
         int limit = Integer.parseInt(allParams.get("limit"));
         String date[] = allParams.get("date").split("-");
+        int year = Integer.parseInt(date[0]);
+        int mount = Integer.parseInt(date[1]);
+        int day = Integer.parseInt(date[2]);
         Pageable pageable = PageRequest.of(offset, limit);
-        return null;
+        LocalDateTime time = LocalDateTime.of(year, mount, day, 0, 0);
+        ArrayList<Post> posts = postRepository.findAllByDate(time, pageable);
+        switch (posts.size()) {
+            case 0:
+                return ResponseEntity.ok().body(PostsResponse.getEmptyResonse());
+            default: {
+                return ResponseEntity.ok().body(new PostsResponse(posts));
+            }
+        }
+    }
+
+    public ResponseEntity<PostsResponse> getPostForModeration(Map<String, String> allParams) {
+        int offset = Integer.parseInt(allParams.get("offset"));
+        int limit = Integer.parseInt(allParams.get("limit"));
+        String status = allParams.get("status");
+        ArrayList<Post> posts;
+        Pageable pageable = PageRequest.of(offset, limit);
+        switch (status) {
+            case "new":
+                posts = postRepository.findNew(pageable);
+                break;
+            default:
+                posts = postRepository.findMyModeration(1, status, pageable);
+        }
+        switch (posts.size()) {
+            case 0:
+                return ResponseEntity.ok().body(PostsResponse.getEmptyResonse());
+            default: {
+                return ResponseEntity.ok().body(new PostsResponse(posts));
+            }
+        }
+    }
+
+
+    public ResponseEntity<PostsResponse> getMyPosts(Map<String, String> allParams) {
+        int offset = Integer.parseInt(allParams.get("offset"));
+        int limit = Integer.parseInt(allParams.get("limit"));
+        String status = allParams.get("status");
+        status = status.equals("pending")? "NEW" : status.equals("declined")? "DECLINED" : "ACCEPTED";
+        ArrayList<Post> posts;
+        Pageable pageable = PageRequest.of(offset, limit);
+        switch (status) {
+            case "inactive ":
+                posts = postRepository.myPostsInactive(1, pageable);
+                break;
+            default:
+                posts = postRepository.myPostsWithStatus(1, status, pageable);
+        }
+        switch (posts.size()) {
+            case 0:
+                return ResponseEntity.ok().body(PostsResponse.getEmptyResonse());
+            default: {
+                return ResponseEntity.ok().body(new PostsResponse(posts));
+            }
+        }
     }
 
     private List<Post> makingSubArray(Triplet<Integer, Integer, ArrayList<Post>> triplet) {
@@ -100,4 +157,5 @@ public class PostService {
         ArrayList<Post> posts = postRepository.finAllWithPageable(LocalDateTime.now(), pageable);
         return new PostsResponse(posts);
     }
+
 }

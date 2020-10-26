@@ -22,6 +22,6 @@ public interface Tag2PostRepository extends CrudRepository<TagToPost, Integer> {
     @Query("FROM TagToPost WHERE tag_id = ?1")
     List<TagToPost> findPostsByTag(int id, Pageable pageable);
 
-    @Query("SELECT post FROM TagToPost WHERE tag_id = ?1 AND isActive = 1 AND moderationStatus = 'ACCEPTED' AND time < ?2")
+    @Query("SELECT ttp.post FROM TagToPost ttp WHERE ttp.tag.id = ?1 AND ttp.post.isActive = 1 AND ttp.post.moderationStatus = 'ACCEPTED' AND ttp.post.time < ?2")
     List<Post> findsPosts(int id, LocalDateTime time, Pageable pageable);
 }
