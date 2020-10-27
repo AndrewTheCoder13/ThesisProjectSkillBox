@@ -1,6 +1,7 @@
 package main.model;
 
 import lombok.Data;
+import main.model.security.Role;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -42,6 +43,10 @@ public class User
     @OneToMany
     @JoinColumn(name = "user_id", referencedColumnName = "id", insertable = false, updatable = false)
     private List<Post> userPosts;
+
+    public Role getRole(){
+        return isModerator == 1? Role.MODERATOR : Role.USER;
+    }
 
 
 }

@@ -1,0 +1,1 @@
+update users set password = '$2y$12$GGevQqM2dVbEZdIO7p1n8eLbT4/kdlbfoyE9vAUiQ3TBG4bTmIgJK'
