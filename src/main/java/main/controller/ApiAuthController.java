@@ -31,6 +31,7 @@ public class ApiAuthController {
 
     @PostMapping("/api/auth/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
+        main.model.User currentUser = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(() -> new UsernameNotFoundException(loginRequest.getEmail()));
         Authentication auth = authenticationManager.
                 authenticate(
                         new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));

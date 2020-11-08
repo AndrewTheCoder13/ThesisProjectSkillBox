@@ -40,8 +40,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/**").permitAll()
                 //.antMatchers("/api/post").hasAuthority(Permission.MODERATE.getPermission())
                 .and()
-                .formLogin().disable()
-                .httpBasic();
+                /*.formLogin().disable()*/
+                .httpBasic().disable();
     }
 
     @Bean
