@@ -1,6 +1,8 @@
 package main.model;
 
 import lombok.Data;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;

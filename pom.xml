@@ -31,6 +31,7 @@
             <plugin>
                 <groupId>org.flywaydb.enterprise</groupId>
                 <artifactId>flyway-core</artifactId>
+                <version>7.3.1</version>
             </plugin>
         </plugins>
     </build>
@@ -106,6 +107,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.cage</groupId>
+            <artifactId>cage</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 

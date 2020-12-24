@@ -1,6 +1,7 @@
 package main.model;
 
 import lombok.Data;
+import lombok.ToString;
 import main.model.security.Role;
 
 import javax.persistence.*;
@@ -42,6 +43,7 @@ public class User
 
     @OneToMany
     @JoinColumn(name = "user_id", referencedColumnName = "id", insertable = false, updatable = false)
+    @ToString.Exclude
     private List<Post> userPosts;
 
     public Role getRole(){
