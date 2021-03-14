@@ -70,4 +70,7 @@ public class Post{
         return likeVotes.size();
     }
 
+    public int getDifference(){
+        return likeVotes.size()-dislikeVotes.size();
+    }
 }

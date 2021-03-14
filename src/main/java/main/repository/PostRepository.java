@@ -27,8 +27,8 @@ public interface PostRepository extends CrudRepository<Post, Integer> {
     @Query("FROM Post WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time < ?2 AND id = ?1")
     Post findByIdAndActive(int id,LocalDateTime time);
 
-    @Query("FROM Post WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time = ?1")
-    ArrayList<Post> findAllByDate(LocalDateTime time, Pageable pageable);
+    @Query("FROM Post WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time BETWEEN ?1 AND ?2")
+    ArrayList<Post> findAllByDate(LocalDateTime startTime, LocalDateTime endTime, Pageable pageable);
 
     @Query("FROM Post WHERE is_active = 1 AND moderation_status = 'NEW'")
     ArrayList<Post> findNew(Pageable pageable);
@@ -41,4 +41,10 @@ public interface PostRepository extends CrudRepository<Post, Integer> {
 
     @Query("FROM Post WHERE is_active = 1 AND user_id = ?1 AND moderation_status = ?2")
     ArrayList<Post> myPostsWithStatus(int id, String status, Pageable pageable);
+
+    @Query("FROM Post WHERE is_active = 1 AND user_id = ?1 AND moderation_status = ?2")
+    ArrayList<Post> myPosts(int id, String status);
+
+    @Query("SELECT time FROM Post")
+    ArrayList<LocalDateTime> years();
 }

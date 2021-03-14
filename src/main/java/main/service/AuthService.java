@@ -1,35 +1,23 @@
 package main.service;
 
-import main.api.response.LoginResponse;
-import main.api.response.UserLoginResponse;
-import main.api.response.auth.CaptchaResponse;
-import main.api.response.auth.Errors;
-import main.api.response.auth.RegisterRequest;
-import main.api.response.auth.RegisterResponse;
-import main.config.SecurityConfig;
+import main.api.responseAndAnswers.auth.LoginResponse;
+import main.api.responseAndAnswers.auth.UserLoginResponse;
+import main.api.responseAndAnswers.auth.*;
 import main.model.CaptchaCode;
 import main.model.User;
 import main.repository.CaptchaCodeRepository;
 import main.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.security.Security;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Base64;
-import java.util.List;
-import java.util.Random;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -42,6 +30,12 @@ public class AuthService {
     @Autowired
     private CaptchaCodeRepository captchaCodeRepository;
 
+    @Autowired
+    private RandomGenerator randomGenerator;
+
+    @Autowired
+    private MailSender mailSender;
+
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(12);
 
     public LoginResponse getLoginResponse(String email) {
@@ -52,74 +46,80 @@ public class AuthService {
         userLoginResponse.setName(currentUser.getName());
         userLoginResponse.setModeration(currentUser.getIsModerator() == 1);
         userLoginResponse.setId(currentUser.getId());
-
+        userLoginResponse.setPhoto(currentUser.getPhoto());
         LoginResponse loginResponse = new LoginResponse();
         loginResponse.setResult(true);
         loginResponse.setUserLoginResponse(userLoginResponse);
         return loginResponse;
     }
 
-    public String getRandomStringImpl() {
-        char[] charArray = new char[8];
-        Random random = new Random();
-        int capitalLetter;
-        for (int i = 0; i < 8; i++) {
-            capitalLetter = 65 + random.nextInt(26);
-            charArray[i] = (char) capitalLetter;
+    public ResponseEntity<RestoreResponse> letterSend(Optional<main.model.User> user, RestoreRequest restoreRequest){
+        main.model.User userGet = user.get();
+        int length = 64;
+        String code = randomGenerator.generate(length);
+        userGet.setCode(code);
+        mailSender.send(restoreRequest.getEmail(), "Восстановление пароля", "Ссылка для восстановление пароля: http://localhost:8080/login/change-password/" + code);
+        userRepository.save(userGet);
+        RestoreResponse response = new RestoreResponse();
+        response.setResult(true);
+        return ResponseEntity.ok().body(response);
+    }
+
+    public ResponseEntity<RestoreResponse> userNotFound(){
+        RestoreResponse response = new RestoreResponse();
+        response.setResult(false);
+        return ResponseEntity.ok().body(response);
+    }
+
+    public ResponseEntity<PasswordAnswer> password(PasswordRequest request){
+        PasswordAnswer answer = new PasswordAnswer();
+        Optional<User> userOptional = userRepository.findByCode(request.getCode());
+        if(userOptional.isEmpty()){
+            return oldLink();
         }
-        String randomString = "";
-        for (char simbol : charArray) {
-            randomString += simbol;
+        User user = userOptional.get();
+        if(request.getPassword().length() < 6){
+            return shortPassword();
         }
-        return randomString;
-    }
-
-    public String formImageToString(BufferedImage image) {
-        String encodedImage = "data:image/png;base64, ";
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            ImageIO.write(image, "png", baos);
-        } catch (IOException e) {
-            e.printStackTrace();
+        CaptchaCode code = captchaCodeRepository.getBySecret(request.getCaptchaSecret());
+        if(!code.getCode().equals(request.getCaptcha())){
+            return wrongCaptcha();
         }
-        byte[] imageInByte = baos.toByteArray();
-        String encodedString = Base64.getEncoder().encodeToString(imageInByte);
-        encodedImage += encodedString;
-        return encodedImage;
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setCode(null);
+        userRepository.save(user);
+        answer.setErrors(null);
+        answer.setResult(true);
+        return  ResponseEntity.ok().body(answer);
     }
 
-    public BufferedImage resizeImage(BufferedImage image) {
-        BufferedImage newImage = new BufferedImage(100, 35, BufferedImage.TYPE_INT_RGB);
-        Graphics g = newImage.createGraphics();
-        g.drawImage(image, 0, 0, 100, 35, null);
-        g.dispose();
-        return newImage;
+    private ResponseEntity<PasswordAnswer> oldLink(){
+        PasswordAnswer answer = new PasswordAnswer();
+        PasswordErrors errors = new PasswordErrors();
+        errors.setCode("Ссылка для восстановления пароля устарела.\n" +
+                "<a href=\n" +
+                "/auth/restore\\\">Запросить ссылку снова</a>");
+        answer.setErrors(errors);
+        answer.setResult(false);
+        return  ResponseEntity.ok().body(answer);
     }
 
-    public void addCaptchaToDB(CaptchaResponse captchaResponse, String randomString) {
-        CaptchaCode captchaCode = new CaptchaCode();
-        captchaCode.setCode(randomString);
-        captchaCode.setSecretCode(captchaResponse.getSecret());
-        captchaCode.setTime(LocalDateTime.now(ZoneOffset.UTC));
-        captchaCodeRepository.save(captchaCode);
+    private ResponseEntity<PasswordAnswer> shortPassword(){
+        PasswordAnswer answer = new PasswordAnswer();
+        PasswordErrors errors = new PasswordErrors();
+        errors.setPassword("Пароль короче 6-ти символов");
+        answer.setErrors(errors);
+        answer.setResult(false);
+        return  ResponseEntity.ok().body(answer);
     }
 
-    public String generateSpecialCode() {
-        boolean isInDB = true;
-        String code = "";
-        while (isInDB) {
-            UUID secretCode = UUID.randomUUID();
-            code = secretCode.toString();
-            isInDB = captchaCodeRepository.countOfIdentification(code) > 0;
-
-        }
-        return code;
-    }
-
-    @Scheduled(fixedRate = 3600000)
-    public void deleteOldCaptcha() {
-        LocalDateTime hourAgo = LocalDateTime.now(ZoneOffset.UTC);
-        captchaCodeRepository.oldVersions(hourAgo);
+    private ResponseEntity<PasswordAnswer> wrongCaptcha(){
+        PasswordAnswer answer = new PasswordAnswer();
+        PasswordErrors errors = new PasswordErrors();
+        errors.setCaptcha("Код с картинки введён неверно");
+        answer.setErrors(errors);
+        answer.setResult(false);
+        return  ResponseEntity.ok().body(answer);
     }
 
     public RegisterResponse findErrors(RegisterRequest request) {
@@ -138,7 +138,7 @@ public class AuthService {
         errorInName(errors, name);
         errorInPassword(errors, password);
         errorsInCaptcha(errors, captcha, secret);
-        boolean areErrors = checkErrors(errors);
+        boolean areErrors = errors.checkErrors();
         return areErrors? errors : null;
     }
 
@@ -149,7 +149,9 @@ public class AuthService {
     }
 
     public void errorInName(Errors errors, String name){
-        //реализовать по какому принципу некорректное имя
+        if(name == null){
+            errors.setName("Имя указано неверно");
+        }
     }
 
     public void errorInPassword(Errors errors, String password){
@@ -165,10 +167,6 @@ public class AuthService {
         }
     }
 
-    private boolean checkErrors(Errors errors) {
-        return errors.getEmail() != null || errors.getPassword() != null || errors.getName() != null || errors.getCaptcha() != null;
-    }
-
     public void addUserToDB(RegisterRequest request){
         String email = request.getEmail();
         String name = request.getName();
@@ -181,5 +179,31 @@ public class AuthService {
         user.setIsModerator(isModerator);
         user.setRegTime(LocalDateTime.now(ZoneOffset.UTC));
         userRepository.save(user);
+    }
+
+    public String generateSpecialCode() {
+        boolean isInDB = true;
+        String code = "";
+        while (isInDB) {
+            UUID secretCode = UUID.randomUUID();
+            code = secretCode.toString();
+            isInDB = captchaCodeRepository.countOfIdentification(code) > 0;
+
+        }
+        return code;
+    }
+
+    public void addCaptchaToDB(CaptchaResponse captchaResponse, String randomString) {
+        CaptchaCode captchaCode = new CaptchaCode();
+        captchaCode.setCode(randomString);
+        captchaCode.setSecretCode(captchaResponse.getSecret());
+        captchaCode.setTime(LocalDateTime.now(ZoneOffset.UTC));
+        captchaCodeRepository.save(captchaCode);
+    }
+
+    @Scheduled(fixedRate = 3600000)
+    public void deleteOldCaptcha() {
+        LocalDateTime hourAgo = LocalDateTime.now(ZoneOffset.UTC);
+        captchaCodeRepository.oldVersions(hourAgo);
     }
 }

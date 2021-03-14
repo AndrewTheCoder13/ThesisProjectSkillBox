@@ -20,6 +20,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import org.springframework.web.multipart.MultipartResolver;
+import org.springframework.web.multipart.commons.CommonsMultipartResolver;
+
+import javax.servlet.http.Cookie;
 
 @Configuration
 @EnableWebSecurity
@@ -41,7 +46,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/**").permitAll()
                 //.antMatchers("/api/post").hasAuthority(Permission.MODERATE.getPermission())
                 .and()
-                /*.formLogin().disable()*/
                 .httpBasic().disable();
     }
 

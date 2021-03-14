@@ -1,6 +1,6 @@
 package main.service;
 
-import main.api.response.tags.Tags;
+import main.api.responseAndAnswers.tags.Tags;
 import main.model.Tag;
 import main.repository.PostRepository;
 import main.repository.Tag2PostRepository;

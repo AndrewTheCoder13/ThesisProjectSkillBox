@@ -1,39 +1,33 @@
 package main.controller;
 
 import com.github.cage.Cage;
-import jdk.jfr.Enabled;
-import main.api.response.LoginRequest;
-import main.api.response.LoginResponse;
-import main.api.response.UserLoginResponse;
-import main.api.response.auth.CaptchaResponse;
-import main.api.response.auth.RegisterRequest;
-import main.api.response.auth.RegisterResponse;
+import main.api.responseAndAnswers.auth.LoginRequest;
+import main.api.responseAndAnswers.auth.LoginResponse;
+import main.api.responseAndAnswers.auth.*;
 import main.repository.UserRepository;
 import main.service.AuthService;
+import main.service.ImageService;
+import main.service.MailSender;
+import main.service.RandomGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Optional;
 
-@RestController("/api/auth/")
+@RestController("/api/auth")
+@RequestMapping("/api/auth")
 public class ApiAuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -43,12 +37,21 @@ public class ApiAuthController {
     private AuthService authService;
 
     @Autowired
+    private MailSender mailSender;
+
+    @Autowired
+    private RandomGenerator randomGenerator;
+
+    @Autowired
+    private ImageService imageService;
+
+    @Autowired
     public ApiAuthController(AuthenticationManager authenticationManager, UserRepository userRepository) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
     }
 
-    @PostMapping("/api/auth/login")
+    @PostMapping("login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
         main.model.User currentUser = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(() -> new UsernameNotFoundException(loginRequest.getEmail()));
         Authentication auth = authenticationManager.
@@ -60,7 +63,7 @@ public class ApiAuthController {
         return ResponseEntity.ok().body(loginResponse);
     }
 
-    @GetMapping("/api/auth/check")
+    @GetMapping("check")
     public ResponseEntity<LoginResponse> check(Principal principal) {
         if(principal == null){
             return ResponseEntity.ok().body(new LoginResponse());
@@ -68,8 +71,22 @@ public class ApiAuthController {
         return ResponseEntity.ok().body(authService.getLoginResponse(principal.getName()));
     }
 
+    @PostMapping("restore")
+    public ResponseEntity<RestoreResponse> restore(@RequestBody RestoreRequest restoreRequest) throws IOException {
+        Optional<main.model.User> user = userRepository.findByEmail(restoreRequest.getEmail());
+        if(user.isPresent()){
+            return authService.letterSend(user, restoreRequest);
+        } else {
+            return authService.userNotFound();
+        }
+    }
 
-    @PostMapping("/api/auth/register")
+    @PostMapping("password")
+    public ResponseEntity<PasswordAnswer> password(@RequestBody PasswordRequest request) {
+        return authService.password(request);
+    }
+
+    @PostMapping("register")
     private ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request){
         RegisterResponse response = authService.findErrors(request);
         if(!response.isResult()){
@@ -80,16 +97,25 @@ public class ApiAuthController {
         }
     }
 
-    @GetMapping("/api/auth/captcha")
+    @GetMapping("captcha")
     private ResponseEntity<CaptchaResponse> captcha(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String randomString = authService.getRandomStringImpl();
+        String randomString = randomGenerator.generate(8);
         String identification = authService.generateSpecialCode();
         Cage cage = new Cage();
-        BufferedImage image = authService.resizeImage(cage.drawImage(randomString));
-        String code = authService.formImageToString(image);
+        BufferedImage image = imageService.resizeCaptchaImage(cage.drawImage(randomString));
+        String code = imageService.formImageToString(image);
         CaptchaResponse captchaResponse = new CaptchaResponse(identification, code);
         authService.addCaptchaToDB(captchaResponse, randomString);
         return ResponseEntity.ok().body(captchaResponse);
+    }
+
+    @GetMapping("logout")
+    private ResponseEntity<LogoutResponse> logout(){
+        SecurityContextHolder.clearContext();
+        LogoutResponse response = new LogoutResponse();
+        response.setResult(true);
+
+        return ResponseEntity.ok().body(response);
     }
 
 }
