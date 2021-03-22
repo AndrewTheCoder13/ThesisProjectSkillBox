@@ -15,7 +15,7 @@ import java.util.List;
 
 @Repository
 public interface PostRepository extends CrudRepository<Post, Integer> {
-    @Query("FROM Post WHERE LOCATE(:query, title) != 0 OR LOCATE(:query, text) != 0 AND is_active = 1 AND moderation_status = 'ACCEPTED' AND time < :time")
+    @Query("FROM Post WHERE (LOCATE(:query, title) != 0 OR LOCATE(:query, text) != 0) AND is_active = 1 AND moderation_status = 'ACCEPTED' AND time < :time")
     ArrayList<Post> searchPostsByQuery(@Param(value = "query") String query,@Param(value = "time") LocalDateTime time, Pageable pageable);
 
     @Query("FROM Post WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time < ?1")
@@ -45,6 +45,6 @@ public interface PostRepository extends CrudRepository<Post, Integer> {
     @Query("FROM Post WHERE is_active = 1 AND user_id = ?1 AND moderation_status = ?2")
     ArrayList<Post> myPosts(int id, String status);
 
-    @Query("SELECT time FROM Post")
+    @Query("SELECT time FROM Post WHERE is_active = 1 AND moderation_status = 'ACCEPTED'")
     ArrayList<LocalDateTime> years();
 }

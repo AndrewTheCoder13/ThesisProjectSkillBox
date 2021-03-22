@@ -83,6 +83,8 @@ public class PostService {
             } catch (Exception exception){
                 return ResponseEntity.notFound().build();
             }
+        } else if(firstPost == null){
+            return ResponseEntity.notFound().build();
         }
         Post getPost = firstPost;
         changeNumberOfViews(principal, getPost);
@@ -262,19 +264,54 @@ public class PostService {
     }
 
     private void checkAndAddTags(String[] tags, Post post) {
+        deleteTags(tags, post);
         for (String tag : tags) {
-            if (tagRepository.getTagByName(tag).isEmpty()) {
-                Tag tag2 = new Tag();
-                tag2.setName(tag);
-                tagRepository.save(tag2);
-
+            if(!alreadyExist(post, tag)){
+                addTag(tag, post);
             }
-            TagToPost tagToPost = new TagToPost();
-            tagToPost.setId((int) (tag2PostRepository.count() + 1));
-            tagToPost.setPost(post);
-            tagToPost.setTag(tagRepository.getTagByName(tag).get());
-            tag2PostRepository.save(tagToPost);
         }
+    }
+
+    private boolean alreadyExist(Post post, String tag){
+        TagToPost tagToPost = tag2PostRepository.findByTagAndPost(post.getId(), tag);
+        return tagToPost == null? false : true;
+    }
+
+    private void addTag(String tag, Post post){
+        if (tagRepository.getTagByName(tag).isEmpty()) {
+            Tag tag2 = new Tag();
+            tag2.setName(tag);
+            tagRepository.save(tag2);
+
+        }
+        TagToPost tagToPost = new TagToPost();
+        tagToPost.setId((int) (tag2PostRepository.count() + 1));
+        tagToPost.setPost(post);
+        tagToPost.setTag(tagRepository.getTagByName(tag).get());
+        tag2PostRepository.save(tagToPost);
+    }
+
+    private void deleteTags(String[] tags, Post post){
+        zeroCase(tags, post);
+        moreThanOne(tags, post);
+    }
+
+    private void zeroCase(String[] tags, Post post){
+        if(tags.length == 0){
+            List<TagToPost> tagToPosts = tag2PostRepository.findPostById(post.getId());
+            tagToPosts.forEach(t -> tag2PostRepository.delete(t));
+        }
+    }
+
+    private void moreThanOne(String[] tags, Post post){
+        List<TagToPost> tagToPosts = tag2PostRepository.findPostById(post.getId());
+        Arrays.sort(tags);
+        tagToPosts.forEach(tagToPost -> {
+            int id = Arrays.binarySearch(tags, tagToPost.getTag().getName());
+            if(id < 0){
+                tag2PostRepository.delete(tagToPost);
+            }
+        });
     }
 
     public ResponseEntity<ModerationAnswer> moderation(Principal principal, ModerationRequest request){

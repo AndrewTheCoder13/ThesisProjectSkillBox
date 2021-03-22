@@ -1,6 +1,7 @@
 package main.repository;
 
 import main.model.Tag;
+import main.model.TagToPost;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -17,4 +18,5 @@ public interface TagRepository extends CrudRepository<Tag, Integer> {
 
     @Query("FROM Tag WHERE LOCATE(:query, name) != 0")
     List<Tag> searchTagByQuery(@Param(value = "query") String query);
+
 }
