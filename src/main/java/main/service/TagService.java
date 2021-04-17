@@ -13,14 +13,19 @@ import java.util.HashMap;
 
 @Service
 public class TagService {
-    @Autowired
+    
     private TagRepository tagRepository;
 
-    @Autowired
     private Tag2PostRepository tag2PostRepository;
 
-    @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    public TagService(TagRepository tagRepository, Tag2PostRepository tag2PostRepository, PostRepository postRepository) {
+        this.tagRepository = tagRepository;
+        this.tag2PostRepository = tag2PostRepository;
+        this.postRepository = postRepository;
+    }
 
     public Tags getTags(String query){
         HashMap<Tag, Integer> tag2Count = new HashMap<>();

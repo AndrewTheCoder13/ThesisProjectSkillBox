@@ -17,27 +17,18 @@ import java.util.*;
 @RequestMapping("/api/post")
 public class ApiPostController {
 
-    @Autowired
     private PostService postService;
+
+    @Autowired
+    public ApiPostController(PostService postService) {
+        this.postService = postService;
+    }
 
     @GetMapping("")
     public ResponseEntity<PostsResponse> post( @RequestParam(required = false, defaultValue = "0") int offset,
                                                @RequestParam(required = false, defaultValue = "10") int limit,
                                                @RequestParam(required = false, defaultValue = "recent") String mode) {
-        Pageable pageable = null;
-        switch (mode) {
-            case "recent":
-                pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.DESC, "time"));
-                break;
-            case "early":
-                pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.ASC, "time"));
-                break;
-            case "popular":
-            case "best": {
-                return postService.selectWithMode(offset, limit, mode);
-            }
-        }
-        return ResponseEntity.ok().body(postService.findAllWithPageable(pageable));
+        return postService.postsForMainPage(mode, offset, limit);
     }
 
     @GetMapping("search")

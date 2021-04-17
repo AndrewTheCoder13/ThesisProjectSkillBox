@@ -23,11 +23,15 @@ import java.util.Random;
 @Service
 public class ImageService {
 
-    @Autowired
     private UserRepository userRepository;
 
-    @Autowired
     private RandomGenerator randomGenerator;
+
+    @Autowired
+    public ImageService(UserRepository userRepository, RandomGenerator randomGenerator) {
+        this.userRepository = userRepository;
+        this.randomGenerator = randomGenerator;
+    }
 
     public String image(MultipartFile file, boolean resize, Principal principal) throws IOException {
         String format = file.getContentType().substring(file.getContentType().indexOf("/") + 1);

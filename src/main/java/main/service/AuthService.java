@@ -24,19 +24,25 @@ import java.util.UUID;
 @EnableScheduling
 public class AuthService {
 
-    @Autowired
     private UserRepository userRepository;
 
-    @Autowired
     private CaptchaCodeRepository captchaCodeRepository;
 
-    @Autowired
     private RandomGenerator randomGenerator;
 
-    @Autowired
     private MailSender mailSender;
 
-    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(12);
+    private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    public AuthService(UserRepository userRepository, CaptchaCodeRepository captchaCodeRepository,
+                       RandomGenerator randomGenerator, MailSender mailSender) {
+        this.userRepository = userRepository;
+        this.captchaCodeRepository = captchaCodeRepository;
+        this.randomGenerator = randomGenerator;
+        this.mailSender = mailSender;
+        passwordEncoder = new BCryptPasswordEncoder(12);
+    }
 
     public LoginResponse getLoginResponse(String email) {
         main.model.User currentUser = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(email));

@@ -33,25 +33,32 @@ import java.util.*;
 @RestController("/api")
 public class ApiGeneralController {
 
-    @Autowired
     private GlobalSettingsRepository globalSettingsRepository;
 
-    @Autowired
     private TagService tagService;
 
-    @Autowired
     private ImageService imageService;
 
-    @Autowired
     private ProfileService profileService;
 
-    @Autowired
     private CalendarService calendarService;
 
-    @Autowired
     private PostService postService;
 
-    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(12);
+    private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    public ApiGeneralController(GlobalSettingsRepository globalSettingsRepository, TagService tagService,
+                                ImageService imageService, ProfileService profileService, CalendarService calendarService,
+                                PostService postService) {
+        this.globalSettingsRepository = globalSettingsRepository;
+        this.tagService = tagService;
+        this.imageService = imageService;
+        this.profileService = profileService;
+        this.calendarService = calendarService;
+        this.postService = postService;
+        passwordEncoder = new BCryptPasswordEncoder(12);
+    }
 
     @GetMapping("/api/init")
     public ResponseEntity<InitResponse> init() {

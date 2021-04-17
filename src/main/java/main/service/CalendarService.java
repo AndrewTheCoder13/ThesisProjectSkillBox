@@ -16,8 +16,12 @@ import java.util.TreeMap;
 @Service
 public class CalendarService {
 
-    @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    public CalendarService(PostRepository postRepository) {
+        this.postRepository = postRepository;
+    }
 
     public ResponseEntity<CalendarResponse> calendar(@RequestParam Map<String, String> allParams) {
         CalendarResponse response = new CalendarResponse();

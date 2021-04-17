@@ -12,6 +12,7 @@ import org.javatuples.Triplet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,29 +25,54 @@ import java.util.*;
 
 @Service
 public class PostService {
-    @Autowired
+
     private PostRepository postRepository;
 
-    @Autowired
     private PostCommentRepository postCommentRepository;
 
-    @Autowired
     private Tag2PostRepository tag2PostRepository;
 
-    @Autowired
     private TagRepository tagRepository;
 
-    @Autowired
     private UserRepository userRepository;
 
-    @Autowired
     private PostVotesRepository postVotesRepository;
 
-    @Autowired
     private ArrayService arrayService;
 
-    @Autowired
     private CalendarService calendarService;
+
+    @Autowired
+    public PostService(PostRepository postRepository, PostCommentRepository postCommentRepository,
+                       Tag2PostRepository tag2PostRepository, TagRepository tagRepository,
+                       UserRepository userRepository, PostVotesRepository postVotesRepository,
+                       ArrayService arrayService, CalendarService calendarService) {
+        this.postRepository = postRepository;
+        this.postCommentRepository = postCommentRepository;
+        this.tag2PostRepository = tag2PostRepository;
+        this.tagRepository = tagRepository;
+        this.userRepository = userRepository;
+        this.postVotesRepository = postVotesRepository;
+        this.arrayService = arrayService;
+        this.calendarService = calendarService;
+    }
+
+    public ResponseEntity<PostsResponse> postsForMainPage(String mode, int offset, int limit){
+        Pageable pageable = null;
+        switch (mode) {
+            case "recent":
+                pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.DESC, "time"));
+                break;
+            case "early":
+                pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.ASC, "time"));
+                break;
+            case "popular":
+            case "best": {
+                return selectWithMode(offset, limit, mode);
+            }
+        }
+        return ResponseEntity.ok().body(findAllWithPageable(pageable));
+    }
 
     public ResponseEntity<PostsResponse> selectWithMode(int offset, int limit, String mode) {
         ArrayList<Post> posts = (ArrayList<Post>) postRepository.findAllActive(LocalDateTime.now());

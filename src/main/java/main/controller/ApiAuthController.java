@@ -4,15 +4,18 @@ import com.github.cage.Cage;
 import main.api.responseAndAnswers.auth.LoginRequest;
 import main.api.responseAndAnswers.auth.LoginResponse;
 import main.api.responseAndAnswers.auth.*;
+import main.config.SecurityConfig;
 import main.repository.UserRepository;
 import main.service.AuthService;
 import main.service.ImageService;
 import main.service.MailSender;
 import main.service.RandomGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
@@ -33,22 +36,24 @@ public class ApiAuthController {
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
 
-    @Autowired
     private AuthService authService;
 
-    @Autowired
     private MailSender mailSender;
 
-    @Autowired
     private RandomGenerator randomGenerator;
 
-    @Autowired
     private ImageService imageService;
 
     @Autowired
-    public ApiAuthController(AuthenticationManager authenticationManager, UserRepository userRepository) {
+    public ApiAuthController(AuthenticationManager authenticationManager, UserRepository userRepository,
+                             AuthService authService, MailSender mailSender, RandomGenerator randomGenerator,
+                             ImageService imageService) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
+        this.authService = authService;
+        this.mailSender = mailSender;
+        this.randomGenerator = randomGenerator;
+        this.imageService = imageService;
     }
 
     @PostMapping("login")
@@ -110,12 +115,13 @@ public class ApiAuthController {
     }
 
     @GetMapping("logout")
-    private ResponseEntity<LogoutResponse> logout(){
+    public String logout(HttpServletResponse httpServletResponse) throws Exception {
         SecurityContextHolder.clearContext();
         LogoutResponse response = new LogoutResponse();
         response.setResult(true);
-
-        return ResponseEntity.ok().body(response);
+        return "index";
     }
+
+
 
 }

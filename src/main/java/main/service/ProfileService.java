@@ -15,10 +15,15 @@ import java.util.Optional;
 @Service
 public class ProfileService {
 
-    @Autowired
     private UserRepository userRepository;
 
-    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(12);
+    private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    public ProfileService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+        passwordEncoder = new BCryptPasswordEncoder(12);
+    }
 
     public ProfileChangeAnswer getProfileChangeAnswer(ProfileChange profileChange, Principal principal){
         ProfileChangeAnswer answer = new ProfileChangeAnswer();
@@ -48,16 +53,17 @@ public class ProfileService {
     }
 
     private void emailErrors(ProfileChange profileChange, User mainUser, ProfileErrors errors){
-        if(profileChange.getEmail()!=null){
-            Optional<User> secondUser= userRepository.findByEmail(profileChange.getEmail());
-            if(secondUser.isPresent()){
-                if(secondUser.get().getId() != mainUser.getId()){
-                    errors.setEmail("Этот e-mail уже зарегистрирован");
-                }
-            }
-        } else if (profileChange.getEmail() == null){
+        if (profileChange.getEmail() == null) {
             errors.setEmail("e-mail указан неверно");
-        } else mainUser.setEmail(profileChange.getEmail());
+            return;
+        }
+
+        User secondUser = userRepository.findByEmail(profileChange.getEmail()).orElseThrow();
+        if (secondUser.getId() != mainUser.getId()) {
+            errors.setEmail("Этот e-mail уже зарегистрирован");
+            return;
+        }
+        mainUser.setEmail(profileChange.getEmail());
     }
 
     private void passwordErrors(ProfileChange profileChange, User mainUser, ProfileErrors errors){
