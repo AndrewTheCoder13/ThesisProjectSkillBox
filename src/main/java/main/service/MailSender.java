@@ -19,7 +19,7 @@ public class MailSender {
     public void send(String mailTo, String subject, String message){
         SimpleMailMessage mailMessage = new SimpleMailMessage();
 
-        mailMessage.setFrom("smtp.gmail.com");
+        mailMessage.setFrom("springrobot@yandex.ru");
         mailMessage.setTo(mailTo);
         mailMessage.setSubject(subject);
         mailMessage.setText(message);
