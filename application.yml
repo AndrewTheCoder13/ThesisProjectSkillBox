@@ -1,6 +1,6 @@
 spring.datasource.url: jdbc:${CLEARDB_DATABASE_URL:mysql://localhost:3306/springbootapp?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
 
-spring.jpa.hibernate.ddl-auto: create
+spring.jpa.hibernate.ddl-auto: none
 spring.jpa.hibernate.dialect: org.hibernate.dialect.MySQL5Dialect
 
 spring.flyway.baselineOnMigrate : true
