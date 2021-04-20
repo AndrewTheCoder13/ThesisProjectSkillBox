@@ -15,7 +15,7 @@ public class MailConfig {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost("smtp.yandex.ru");
         mailSender.setUsername("springrobot");
-        mailSender.setPassword(System.getenv("PASSWORD"));
+        mailSender.setPassword(System.getenv("MAIL_PASSWORD"));
         mailSender.setPort(465);
         mailSender.setProtocol("smtps");
         Properties properties = mailSender.getJavaMailProperties();
