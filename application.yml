@@ -23,3 +23,14 @@ spring:
           auth: true
           ssl:
             enable: true
+
+
+blog.title: ITsociety
+blog.subtitle: Рассказы разработчиков
+blog.phone: +373 686-544-17
+blog.email: andreiciugreanu7@mail.com
+blog.copyright: Андрей Чугурну
+blog.copyrightFrom: 2020
+
+blog.mailbot.password: ${MAIL_PASSWORD}
+blog.mailbot.username: springrobot

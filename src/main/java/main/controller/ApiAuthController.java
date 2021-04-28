@@ -6,10 +6,7 @@ import main.api.responseAndAnswers.auth.LoginResponse;
 import main.api.responseAndAnswers.auth.*;
 import main.config.SecurityConfig;
 import main.repository.UserRepository;
-import main.service.AuthService;
-import main.service.ImageService;
-import main.service.MailSender;
-import main.service.RandomGenerator;
+import main.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,16 +41,19 @@ public class ApiAuthController {
 
     private ImageService imageService;
 
+    private SettingsService settingsService;
+
     @Autowired
     public ApiAuthController(AuthenticationManager authenticationManager, UserRepository userRepository,
                              AuthService authService, MailSender mailSender, RandomGenerator randomGenerator,
-                             ImageService imageService) {
+                             ImageService imageService, SettingsService settingsService) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.authService = authService;
         this.mailSender = mailSender;
         this.randomGenerator = randomGenerator;
         this.imageService = imageService;
+        this.settingsService = settingsService;
     }
 
     @PostMapping("login")
@@ -93,13 +93,14 @@ public class ApiAuthController {
 
     @PostMapping("register")
     private ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request){
-        RegisterResponse response = authService.findErrors(request);
-        if(!response.isResult()){
-            return ResponseEntity.ok().body(response);
-        } else {
-            authService.addUserToDB(request);
-            return ResponseEntity.ok().body(response);
+        if(!settingsService.getUserMode().getValue().equals("YES")){
+            return ResponseEntity.notFound().build();
         }
+        RegisterResponse response = authService.findErrors(request);
+        if (response.isResult()) {
+            authService.addUserToDB(request);
+        }
+        return ResponseEntity.ok().body(response);
     }
 
     @GetMapping("captcha")

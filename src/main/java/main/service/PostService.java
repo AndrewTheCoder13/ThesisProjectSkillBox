@@ -42,11 +42,15 @@ public class PostService {
 
     private CalendarService calendarService;
 
+    private SettingsService settingsService;
+
+
     @Autowired
     public PostService(PostRepository postRepository, PostCommentRepository postCommentRepository,
                        Tag2PostRepository tag2PostRepository, TagRepository tagRepository,
                        UserRepository userRepository, PostVotesRepository postVotesRepository,
-                       ArrayService arrayService, CalendarService calendarService) {
+                       ArrayService arrayService, CalendarService calendarService,
+                       SettingsService settingsService) {
         this.postRepository = postRepository;
         this.postCommentRepository = postCommentRepository;
         this.tag2PostRepository = tag2PostRepository;
@@ -55,6 +59,7 @@ public class PostService {
         this.postVotesRepository = postVotesRepository;
         this.arrayService = arrayService;
         this.calendarService = calendarService;
+        this.settingsService = settingsService;
     }
 
     public ResponseEntity<PostsResponse> postsForMainPage(String mode, int offset, int limit){
@@ -220,6 +225,7 @@ public class PostService {
     }
 
     public ResponseEntity<PutPostResponse> putPost(Principal principal, @RequestBody PostAdd postForAdd) {
+
         PutPostResponse postResponse = findErrors(postForAdd);
         if (postResponse.isResult()) {
             Post post = makePost(principal, postForAdd, -1);
@@ -282,7 +288,8 @@ public class PostService {
         post.setIsActive(postForAdd.getActive());
         post.setTitle(postForAdd.getTitle());
         post.setText(postForAdd.getText());
-        post.setModerationStatus(ModerationStatus.NEW);
+        post.setModerationStatus(settingsService.getPostModerationMode().getValue().equals("YES") ?
+                ModerationStatus.NEW : ModerationStatus.ACCEPTED);
         post.setDislikeVotes(new ArrayList<PostVote>());
         post.setLikeVotes(new ArrayList<PostVote>());
         post.setPostComments(new ArrayList<PostComment>());
@@ -390,9 +397,34 @@ public class PostService {
         return getStatistic(posts);
     }
 
-    public ResponseEntity<StatisticAnswer> allStatistic(){
+    public ResponseEntity<StatisticAnswer> allStatistic(Principal principal){
+        if(unauthorizedError(principal)){
+            return ResponseEntity.status(401).build();
+        }
         ArrayList<Post> posts = postRepository.findAllActive(LocalDateTime.now());
         return getStatistic(posts);
+    }
+
+    private boolean unauthorizedError(Principal principal){
+        if(principal == null){
+            return true;
+        }
+        Optional<User> user = userRepository.findByEmail(principal.getName());
+        if(user.isEmpty()){
+            return userIsUnauthorized();
+        } else {
+            return userIsAuthorized(user);
+        }
+    }
+
+    private boolean userIsAuthorized(Optional<User> optionalUser){
+        User user = optionalUser.get();
+        return user.getIsModerator() != 1;
+    }
+
+    private boolean userIsUnauthorized(){
+        String globalStatisticSetting = settingsService.getStatisticsMode().getValue();
+        return globalStatisticSetting.equals("NO");
     }
 
     private ResponseEntity<StatisticAnswer> getStatistic(ArrayList<Post> posts){

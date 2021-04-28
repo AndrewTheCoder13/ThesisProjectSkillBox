@@ -47,10 +47,12 @@ public class ApiGeneralController {
 
     private BCryptPasswordEncoder passwordEncoder;
 
+    private final InitResponse initResponse;
+
     @Autowired
     public ApiGeneralController(GlobalSettingsRepository globalSettingsRepository, TagService tagService,
                                 ImageService imageService, ProfileService profileService, CalendarService calendarService,
-                                PostService postService) {
+                                PostService postService, InitResponse initResponse) {
         this.globalSettingsRepository = globalSettingsRepository;
         this.tagService = tagService;
         this.imageService = imageService;
@@ -58,18 +60,13 @@ public class ApiGeneralController {
         this.calendarService = calendarService;
         this.postService = postService;
         passwordEncoder = new BCryptPasswordEncoder(12);
+        this.initResponse = initResponse;
     }
+
 
     @GetMapping("/api/init")
     public ResponseEntity<InitResponse> init() {
-        InitResponse response = new InitResponse();
-        response.setTitle("ITsociety");
-        response.setSubtitle("Рассказы разработчиков");
-        response.setPhone("+373 686-544-17");
-        response.setEmail("andreiciugreanu7@mail.com");
-        response.setCopyright("Андрей Чугурну");
-        response.setCopyrightFrom("2020");
-        return ResponseEntity.ok().body(response);
+        return ResponseEntity.ok().body(initResponse);
     }
 
     @PreAuthorize("hasAuthority('user:write')")
@@ -145,8 +142,8 @@ public class ApiGeneralController {
     }
 
     @GetMapping("/api/statistics/all")
-    public ResponseEntity<StatisticAnswer> allStatistic(){
-        return  postService.allStatistic();
+    public ResponseEntity<StatisticAnswer> allStatistic(Principal principal){
+        return  postService.allStatistic(principal);
     }
 
     @GetMapping("/api/settings")
