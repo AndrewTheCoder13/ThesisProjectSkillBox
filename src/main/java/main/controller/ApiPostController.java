@@ -66,13 +66,13 @@ public class ApiPostController {
     @PreAuthorize("hasAuthority('user:write')")
     @PostMapping("")
     public ResponseEntity<PutPostResponse> putPost(Principal principal, @RequestBody PostAdd postForAdd){
-        return postService.putPost(principal, postForAdd);
+        return postService.putOrEditPost(principal, postForAdd, -1);
     }
 
     @PreAuthorize("hasAuthority('user:write')")
     @PutMapping("{id}")
     public ResponseEntity<PutPostResponse> editPost(Principal principal, @RequestBody PostAdd postForAdd, @PathVariable int id){
-        return postService.editPost(principal, postForAdd, id);
+        return postService.putOrEditPost(principal, postForAdd, id);
     }
     @PreAuthorize("hasAuthority('user:write')")
     @PostMapping("like")

@@ -26,11 +26,11 @@ public class Post{
     @Column(nullable = false, name = "moderation_status", columnDefinition = "enum('NEW', 'ACCEPTED', 'DECLINED')")
     private ModerationStatus moderationStatus;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne()
     @JoinColumn(name = "moderator_id")
     private User moderator;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne()
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 

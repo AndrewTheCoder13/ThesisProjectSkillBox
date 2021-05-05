@@ -14,7 +14,7 @@ public class TagToPost {
     @Column(nullable = false)
     private int id;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne()
     @JoinColumn(nullable = false)
     private Post post;
 

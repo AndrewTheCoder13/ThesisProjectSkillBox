@@ -137,6 +137,12 @@
             <artifactId>MarvinPlugins</artifactId>
             <version>1.5.5</version>
         </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>RELEASE</version>
+            <scope>compile</scope>
+        </dependency>
 
     </dependencies>
 

@@ -11,7 +11,7 @@ import java.util.List;
 public class ArrayService {
     public List<Post> makingSubArray(Triplet<Integer, Integer, ArrayList<Post>> triplet) {
         int begin = triplet.getValue0() * triplet.getValue1();
-        int end = begin + triplet.getValue1() > triplet.getValue2().size() ? triplet.getValue2().size() : begin + triplet.getValue1();
+        int end = Math.min(begin + triplet.getValue1(), triplet.getValue2().size());
         return triplet.getValue2().subList(begin, end);
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import javax.validation.constraints.NotNull;
 import java.nio.file.AccessDeniedException;
 import java.security.Principal;
 import java.sql.Timestamp;
@@ -224,24 +225,12 @@ public class PostService {
         }
     }
 
-    public ResponseEntity<PutPostResponse> putPost(Principal principal, @RequestBody PostAdd postForAdd) {
-
-        PutPostResponse postResponse = findErrors(postForAdd);
-        if (postResponse.isResult()) {
-            Post post = makePost(principal, postForAdd, -1);
-            String[] tags = postForAdd.getTags();
-            postRepository.save(post);
-            checkAndAddTags(tags, post);
-        }
-        return ResponseEntity.ok().body(postResponse);
-    }
-
-    public ResponseEntity<PutPostResponse> editPost(Principal principal, @RequestBody PostAdd postForAdd, int id){
+    public ResponseEntity<PutPostResponse> putOrEditPost(Principal principal, @RequestBody PostAdd postForAdd, int id) {
         PutPostResponse postResponse = findErrors(postForAdd);
         if (postResponse.isResult()) {
             Post post = makePost(principal, postForAdd, id);
             String[] tags = postForAdd.getTags();
-            postRepository.save(post);
+            post = postRepository.save(post);
             checkAndAddTags(tags, post);
         }
         return ResponseEntity.ok().body(postResponse);
@@ -406,24 +395,30 @@ public class PostService {
     }
 
     private boolean unauthorizedError(Principal principal){
-        if(principal == null){
-            return true;
-        }
+        String globalStatisticSetting = settingsService.getStatisticsMode().getValue();
+        if(principal == null) return nullCase(globalStatisticSetting);
+        return defaultCase(principal, globalStatisticSetting);
+    }
+
+    private boolean nullCase(String globalStatisticSetting){
+        return globalStatisticSetting.equals("NO");
+    }
+
+    private boolean defaultCase(Principal principal, String globalStatisticSetting) {
         Optional<User> user = userRepository.findByEmail(principal.getName());
         if(user.isEmpty()){
-            return userIsUnauthorized();
+            return userIsUnauthorized(globalStatisticSetting);
         } else {
-            return userIsAuthorized(user);
+            return userIsAuthorized(user, globalStatisticSetting);
         }
     }
 
-    private boolean userIsAuthorized(Optional<User> optionalUser){
+    private boolean userIsAuthorized(Optional<User> optionalUser, String globalStatisticSetting){
         User user = optionalUser.get();
-        return user.getIsModerator() != 1;
+        return (user.getIsModerator() != 1 && globalStatisticSetting.equals("NO"));
     }
 
-    private boolean userIsUnauthorized(){
-        String globalStatisticSetting = settingsService.getStatisticsMode().getValue();
+    private boolean userIsUnauthorized(String globalStatisticSetting){
         return globalStatisticSetting.equals("NO");
     }
 

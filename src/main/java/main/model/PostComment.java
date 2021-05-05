@@ -16,14 +16,14 @@ public class PostComment {
     @Column(nullable = false)
     private int id;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne()
     private PostComment parent;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne()
     @JoinColumn(nullable = false)
     private Post post;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne()
     @JoinColumn(nullable = false)
     private User user;
 
