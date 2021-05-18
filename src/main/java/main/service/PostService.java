@@ -10,6 +10,7 @@ import main.model.*;
 import main.repository.*;
 import org.javatuples.Triplet;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -27,23 +28,15 @@ import java.util.*;
 @Service
 public class PostService {
 
-    private PostRepository postRepository;
-
-    private PostCommentRepository postCommentRepository;
-
-    private Tag2PostRepository tag2PostRepository;
-
-    private TagRepository tagRepository;
-
-    private UserRepository userRepository;
-
-    private PostVotesRepository postVotesRepository;
-
-    private ArrayService arrayService;
-
-    private CalendarService calendarService;
-
-    private SettingsService settingsService;
+    private final PostRepository postRepository;
+    private final PostCommentRepository postCommentRepository;
+    private final Tag2PostRepository tag2PostRepository;
+    private final TagRepository tagRepository;
+    private final UserRepository userRepository;
+    private final PostVotesRepository postVotesRepository;
+    private final ArrayService arrayService;
+    private final CalendarService calendarService;
+    private final SettingsService settingsService;
 
 
     @Autowired
@@ -66,44 +59,46 @@ public class PostService {
     public ResponseEntity<PostsResponse> postsForMainPage(String mode, int offset, int limit){
         Pageable pageable = null;
         switch (mode) {
-            case "recent":
-                pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.DESC, "time"));
-                break;
-            case "early":
-                pageable = PageRequest.of(offset, limit, Sort.by(Sort.Direction.ASC, "time"));
-                break;
-            case "popular":
-            case "best": {
-                return selectWithMode(offset, limit, mode);
+            case "recent": {
+                Sort sort = Sort.by(Sort.Direction.DESC, "time");
+                pageable = PageRequest.of(offset/limit, limit, sort);
             }
+                break;
+            case "early": {
+                Sort sort = Sort.by(Sort.Direction.ASC, "time");
+                pageable = PageRequest.of(offset/limit, limit, sort);
+            }
+                break;
+            case "popular":{
+                Sort.TypedSort<Post> sort = Sort.sort(Post.class);
+                sort.by(Post::getPostCommentsSize);
+                sort.descending();
+                pageable = PageRequest.of(offset/limit, limit, sort);
+            }
+                break;
+            case "best": {
+                Sort.TypedSort<Post> sort = Sort.sort(Post.class);
+                sort.by(Post::getLikeCount);
+                sort.descending();
+                pageable = PageRequest.of(offset/limit, limit, sort);
+            }
+                break;
         }
         return ResponseEntity.ok().body(findAllWithPageable(pageable));
     }
-
-    public ResponseEntity<PostsResponse> selectWithMode(int offset, int limit, String mode) {
-        ArrayList<Post> posts = (ArrayList<Post>) postRepository.findAllActive(LocalDateTime.now());
-        posts.sort(mode.equals("best") ? Comparator.comparing(Post::getDifference).reversed() : Comparator.comparing(Post::getPostCommentsSize).reversed());
-        List<Post> post = arrayService.makingSubArray(new Triplet<>(offset, limit, posts));
-        PostsResponse response = new PostsResponse(post);
-        return ResponseEntity.ok().body(response);
-    }
-
-    public ResponseEntity<PostsResponse> searchPosts(Map<String, String> allParams) {
-        int offset = Integer.parseInt(allParams.get("offset"));
-        int limit = Integer.parseInt(allParams.get("limit"));
-        String query = allParams.get("query");
+    public ResponseEntity<PostsResponse> searchPosts(int offset, int limit, String query) {
         Pageable pageable = PageRequest.of(offset, limit);
         if (query == null) {
             return ResponseEntity.ok().body(findAllWithPageable(pageable));
         } else {
-            ArrayList<Post> posts = postRepository.searchPostsByQuery(query, LocalDateTime.now(), pageable);
+            List<Post> posts = postRepository.searchPostsByQuery(query, LocalDateTime.now(), pageable);
             PostsResponse response = posts == null ? PostsResponse.getEmptyResonse() : new PostsResponse(posts);
             return ResponseEntity.ok().body(response);
         }
     }
 
     public PostsResponse findAllWithPageable(Pageable pageable) {
-        ArrayList<Post> posts = postRepository.finAllWithPageable(LocalDateTime.now(), pageable);
+        List<Post> posts = postRepository.finAllWithPageable(LocalDateTime.now(), pageable);
         return new PostsResponse(posts);
     }
 
@@ -159,10 +154,8 @@ public class PostService {
         return response;
     }
 
-    public ResponseEntity<PostsResponse> searchPostsByDate(Map<String, String> allParams) {
-        int offset = Integer.parseInt(allParams.get("offset"));
-        int limit = Integer.parseInt(allParams.get("limit"));
-        String dateComponents[] = allParams.get("date").split("-");
+    public ResponseEntity<PostsResponse> searchPostsByDate(int offset, int limit, String date) {
+        String dateComponents[] = date.split("-");
         Pageable pageable = PageRequest.of(offset, limit);
         LocalDateTime startTime = calendarService.getStartTime(dateComponents);
         LocalDateTime endTime = calendarService.getEndTime(dateComponents);
@@ -170,20 +163,14 @@ public class PostService {
         return assemblingGroupOfPosts(posts);
     }
 
-    public ResponseEntity<PostsResponse> getPostByTag(Map<String, String> allParams) {
-        int offset = Integer.parseInt(allParams.get("offset"));
-        int limit = Integer.parseInt(allParams.get("limit"));
-        String tagName = allParams.get("tag");
+    public ResponseEntity<PostsResponse> getPostByTag(int offset, int limit, String tagName) {
         int tagId = tagRepository.getTagByName(tagName).get().getId();
         Pageable pageable = PageRequest.of(offset, limit);
         ArrayList<Post> posts = (ArrayList<Post>) tag2PostRepository.findsPosts(tagId, LocalDateTime.now(), pageable);
         return assemblingGroupOfPosts(posts);
     }
 
-    public ResponseEntity<PostsResponse> getPostForModeration(Map<String, String> allParams) {
-        int offset = Integer.parseInt(allParams.get("offset"));
-        int limit = Integer.parseInt(allParams.get("limit"));
-        String status = allParams.get("status");
+    public ResponseEntity<PostsResponse> getPostForModeration(int offset, int limit, String status) {
         ArrayList<Post> posts;
         Pageable pageable = PageRequest.of(offset, limit);
         switch (status) {
@@ -196,11 +183,8 @@ public class PostService {
         return assemblingGroupOfPosts(posts);
     }
 
-    public ResponseEntity<PostsResponse> getMyPosts(Map<String, String> allParams, Principal principal) {
+    public ResponseEntity<PostsResponse> getMyPosts(int offset, int limit, String status, Principal principal) {
         User user = userRepository.findByEmail(principal.getName()).get();
-        int offset = Integer.parseInt(allParams.get("offset"));
-        int limit = Integer.parseInt(allParams.get("limit"));
-        String status = allParams.get("status");
         status = status.equals("pending") ? "NEW" : status.equals("declined") ? "DECLINED" : status.equals("published")? "ACCEPTED" : "INACTIVE";
         ArrayList<Post> posts;
         Pageable pageable = PageRequest.of(offset, limit);
@@ -475,4 +459,6 @@ public class PostService {
         postVotesRepository.save(postVote);
         return ResponseEntity.ok().body(new PutPostResponse(true, null));
     }
+
+
 }

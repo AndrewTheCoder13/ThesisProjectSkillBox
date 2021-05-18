@@ -62,11 +62,11 @@ public class Post{
     @JoinColumn(name = "post_id", referencedColumnName = "id", insertable = false, updatable = false)
     private List<PostComment> postComments;
 
-    public int getPostCommentsSize(){
+    public Integer getPostCommentsSize(){
         return postComments.size();
     }
 
-    public int getLikeCount(){
+    public Integer getLikeCount(){
         return likeVotes.size();
     }
 

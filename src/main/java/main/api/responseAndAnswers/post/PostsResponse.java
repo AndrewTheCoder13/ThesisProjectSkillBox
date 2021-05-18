@@ -2,13 +2,14 @@ package main.api.responseAndAnswers.post;
 
 import lombok.Data;
 import main.model.Post;
+import org.springframework.data.domain.Page;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
 public class PostsResponse {
-    private int count;
+    private long count;
     private List<SearchPostResponse> posts;
 
     public static PostsResponse getEmptyResonse() {
@@ -21,10 +22,19 @@ public class PostsResponse {
         posts = new ArrayList<>();
     }
 
-    public PostsResponse(List<Post> postsByTag) {
+    public PostsResponse(List<Post> receivedPosts) {
         posts = new ArrayList<>();
-        count = postsByTag.size();
-        postsByTag.forEach(post -> {
+        count = receivedPosts.size();
+        receivedPosts.forEach(post -> {
+            SearchPostResponse postResponse = new SearchPostResponse(post);
+            posts.add(postResponse);
+        });
+    }
+
+    public PostsResponse(Page<Post> receivedPosts){
+        posts = new ArrayList<>();
+        count = receivedPosts.getTotalElements();
+        receivedPosts.forEach(post -> {
             SearchPostResponse postResponse = new SearchPostResponse(post);
             posts.add(postResponse);
         });

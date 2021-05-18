@@ -17,7 +17,7 @@ import java.util.*;
 @RequestMapping("/api/post")
 public class ApiPostController {
 
-    private PostService postService;
+    private final PostService postService;
 
     @Autowired
     public ApiPostController(PostService postService) {
@@ -32,30 +32,41 @@ public class ApiPostController {
     }
 
     @GetMapping("search")
-    public ResponseEntity<PostsResponse> searchPosts(@RequestParam Map<String, String> allParams) {
-        return postService.searchPosts(allParams);
+    public ResponseEntity<PostsResponse> searchPosts(@RequestParam(required = false, defaultValue = "0") int offset,
+                                                     @RequestParam(required = false, defaultValue = "10") int limit,
+                                                     @RequestParam(required = false) String query) {
+        return postService.searchPosts(offset, limit, query);
     }
 
     @GetMapping("byDate")
-    public ResponseEntity<PostsResponse> getPostsByDate(@RequestParam Map<String, String> allParams) {
-        return postService.searchPostsByDate(allParams);
+    public ResponseEntity<PostsResponse> getPostsByDate(@RequestParam(required = false, defaultValue = "0") int offset,
+                                                        @RequestParam(required = false, defaultValue = "10") int limit,
+                                                        @RequestParam(required = false) String date) {
+        return postService.searchPostsByDate(offset, limit, date);
     }
 
     @GetMapping("byTag")
-    public ResponseEntity<PostsResponse> getPostByTag(@RequestParam Map<String, String> allParams) {
-        return postService.getPostByTag(allParams);
+    public ResponseEntity<PostsResponse> getPostByTag(@RequestParam(required = false, defaultValue = "0") int offset,
+                                                      @RequestParam(required = false, defaultValue = "10") int limit,
+                                                      @RequestParam(required = false) String tag) {
+        return postService.getPostByTag(offset, limit, tag);
     }
 
     @GetMapping("moderation")
     @PreAuthorize("hasAuthority('user:moderate')")
-    public ResponseEntity<PostsResponse> getPostForModeration(@RequestParam Map<String, String> allParams) {
-        return postService.getPostForModeration(allParams);
+    public ResponseEntity<PostsResponse> getPostForModeration(@RequestParam(required = false, defaultValue = "0") int offset,
+                                                              @RequestParam(required = false, defaultValue = "10") int limit,
+                                                              @RequestParam(required = false, defaultValue = "new") String status) {
+        return postService.getPostForModeration(offset, limit, status);
     }
 
     @GetMapping("my")
     @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity<PostsResponse> geyMyPosts(@RequestParam Map<String, String> allParams, Principal principal) {
-        return postService.getMyPosts(allParams, principal);
+    public ResponseEntity<PostsResponse> geyMyPosts(@RequestParam(required = false, defaultValue = "0") int offset,
+                                                    @RequestParam(required = false, defaultValue = "10") int limit,
+                                                    @RequestParam(required = false, defaultValue = "inactive ") String status,
+                                                    Principal principal) {
+        return postService.getMyPosts(offset, limit, status, principal);
     }
 
     @GetMapping("{id}")
