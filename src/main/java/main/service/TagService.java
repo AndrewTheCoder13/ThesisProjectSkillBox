@@ -1,5 +1,6 @@
 package main.service;
 
+import lombok.AllArgsConstructor;
 import main.api.responseAndAnswers.tags.Tags;
 import main.model.Tag;
 import main.repository.PostRepository;
@@ -12,20 +13,12 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 
 @Service
+@AllArgsConstructor
 public class TagService {
     
-    private TagRepository tagRepository;
-
-    private Tag2PostRepository tag2PostRepository;
-
-    private PostRepository postRepository;
-
-    @Autowired
-    public TagService(TagRepository tagRepository, Tag2PostRepository tag2PostRepository, PostRepository postRepository) {
-        this.tagRepository = tagRepository;
-        this.tag2PostRepository = tag2PostRepository;
-        this.postRepository = postRepository;
-    }
+    private final TagRepository tagRepository;
+    private final Tag2PostRepository tag2PostRepository;
+    private final PostRepository postRepository;
 
     public Tags getTags(String query){
         HashMap<Tag, Integer> tag2Count = new HashMap<>();

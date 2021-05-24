@@ -1,30 +1,50 @@
 package main.service;
 
+import lombok.AllArgsConstructor;
 import main.api.responseAndAnswers.profile.ProfileChange;
 import main.api.responseAndAnswers.profile.ProfileChangeAnswer;
 import main.api.responseAndAnswers.profile.ProfileErrors;
 import main.model.User;
 import main.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.Optional;
 
 @Service
+@AllArgsConstructor
+@Component
 public class ProfileService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
+    @Value("${blog.files.max_file_size}")
+    private final int MAX_FILE_SIZE;
+    private final ImageService imageService;
 
-    private BCryptPasswordEncoder passwordEncoder;
-
-    @Autowired
-    public ProfileService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-        passwordEncoder = new BCryptPasswordEncoder(12);
+    public ResponseEntity<ProfileChangeAnswer> editProfile(MultipartFile photo, String name, String email, String password, Principal principal) throws IOException {
+        ProfileChange change = new ProfileChange(name,0, email, password, "");
+        ProfileChangeAnswer answer = getProfileChangeAnswer(change, principal);
+        long size = photo.getSize();
+        if(size > MAX_FILE_SIZE){
+            if(answer.getErrors() == null){
+                ProfileErrors errors = new ProfileErrors();
+                errors.setPhoto("Фото слишком большое, нужно не более 5 Мб");
+                answer.setResult(false);
+                answer.setErrors(errors);
+                return ResponseEntity.ok().body(answer);
+            }
+        }
+        imageService.image(photo, true, principal);
+        return  ResponseEntity.ok().body(answer);
     }
-
     public ProfileChangeAnswer getProfileChangeAnswer(ProfileChange profileChange, Principal principal){
         ProfileChangeAnswer answer = new ProfileChangeAnswer();
         ProfileErrors errors = new ProfileErrors();

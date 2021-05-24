@@ -1,5 +1,6 @@
 package main.service;
 
+import lombok.AllArgsConstructor;
 import main.api.responseAndAnswers.calendar.CalendarResponse;
 import main.repository.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,25 +9,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 @Service
+@AllArgsConstructor
 public class CalendarService {
 
-    private PostRepository postRepository;
-
-    @Autowired
-    public CalendarService(PostRepository postRepository) {
-        this.postRepository = postRepository;
-    }
+    private final PostRepository postRepository;
 
     public ResponseEntity<CalendarResponse> calendar(@RequestParam Map<String, String> allParams) {
         CalendarResponse response = new CalendarResponse();
         TreeMap<String, Integer> posts = new TreeMap<>();
-        ArrayList<LocalDateTime> time = postRepository.years();
+        List<LocalDateTime> time = postRepository.years();
         int[] years = new int[time.size()];
         time.sort(Comparator.comparing(LocalDateTime::getYear));
         formingList(time, years, posts);
@@ -40,7 +34,7 @@ public class CalendarService {
         return ResponseEntity.ok().body(response);
     }
 
-    private void formingList(ArrayList<LocalDateTime> time, int[] years, TreeMap<String, Integer> posts) {
+    private void formingList(List<LocalDateTime> time, int[] years, TreeMap<String, Integer> posts) {
         int currentIndex = 0;
         for (LocalDateTime dateTime : time) {
             int year = dateTime.getYear();

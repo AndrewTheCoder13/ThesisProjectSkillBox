@@ -1,10 +1,16 @@
 package main.service;
 
+import lombok.AllArgsConstructor;
+import main.api.responseAndAnswers.profile.ProfileErrors;
 import main.model.User;
 import main.repository.UserRepository;
 import marvin.image.MarvinImage;
+import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
 import org.marvinproject.image.transform.scale.Scale;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,19 +24,37 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.Base64;
+import java.util.InvalidPropertiesFormatException;
+import java.util.List;
 import java.util.Random;
 
 @Service
+@AllArgsConstructor
+@Component
 public class ImageService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final RandomGenerator randomGenerator;
+    @Value("${blog.files.max_file_size}")
+    private final int MAX_FILE_SIZE;
 
-    private RandomGenerator randomGenerator;
+    public String saveImageToServer(MultipartFile file) throws SizeLimitExceededException, IOException {
+        long size = file.getSize();
+        if(size > MAX_FILE_SIZE){
+            throw new SizeLimitExceededException("Файл слишком большой", 5, size);
+        }
 
-    @Autowired
-    public ImageService(UserRepository userRepository, RandomGenerator randomGenerator) {
-        this.userRepository = userRepository;
-        this.randomGenerator = randomGenerator;
+        java.util.List<String> allowedFormats = List.of("jpg", "jpeg", "png");
+
+        String format = file.getContentType().substring(file.getContentType().indexOf("/") + 1);
+        if(!allowedFormats.contains(format)){
+            throw new InvalidPropertiesFormatException("Неверный формат");
+        }
+        return image(file, false);
+    }
+
+    public String image(MultipartFile file, boolean resize) throws IOException {
+        return image(file, resize, null);
     }
 
     public String image(MultipartFile file, boolean resize, Principal principal) throws IOException {

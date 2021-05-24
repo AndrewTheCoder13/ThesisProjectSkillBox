@@ -1,6 +1,7 @@
 package main.controller;
 
 import com.github.cage.Cage;
+import lombok.AllArgsConstructor;
 import main.api.responseAndAnswers.auth.LoginRequest;
 import main.api.responseAndAnswers.auth.LoginResponse;
 import main.api.responseAndAnswers.auth.*;
@@ -28,33 +29,16 @@ import java.util.Optional;
 
 @RestController("/api/auth")
 @RequestMapping("/api/auth")
+@AllArgsConstructor
 public class ApiAuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
-
-    private AuthService authService;
-
-    private MailSender mailSender;
-
-    private RandomGenerator randomGenerator;
-
-    private ImageService imageService;
-
-    private SettingsService settingsService;
-
-    @Autowired
-    public ApiAuthController(AuthenticationManager authenticationManager, UserRepository userRepository,
-                             AuthService authService, MailSender mailSender, RandomGenerator randomGenerator,
-                             ImageService imageService, SettingsService settingsService) {
-        this.authenticationManager = authenticationManager;
-        this.userRepository = userRepository;
-        this.authService = authService;
-        this.mailSender = mailSender;
-        this.randomGenerator = randomGenerator;
-        this.imageService = imageService;
-        this.settingsService = settingsService;
-    }
+    private final AuthService authService;
+    private final MailSender mailSender;
+    private final RandomGenerator randomGenerator;
+    private final ImageService imageService;
+    private final SettingsService settingsService;
 
     @PostMapping("login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {

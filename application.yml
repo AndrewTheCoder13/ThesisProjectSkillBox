@@ -35,3 +35,5 @@ blog.copyrightFrom: 2020
 
 blog.mailbot.password: ${MAIL_PASSWORD}
 blog.mailbot.username: springrobot
+#5mb
+blog.files.max_file_size: 5242880

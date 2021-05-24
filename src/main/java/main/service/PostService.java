@@ -1,6 +1,7 @@
 package main.service;
 
 import javassist.NotFoundException;
+import lombok.AllArgsConstructor;
 import main.api.responseAndAnswers.comment.CommentErrors;
 import main.api.responseAndAnswers.comment.PutCommentAnswer;
 import main.api.responseAndAnswers.comment.PutCommentRequest;
@@ -26,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
+@AllArgsConstructor
 public class PostService {
 
     private final PostRepository postRepository;
@@ -38,53 +40,31 @@ public class PostService {
     private final CalendarService calendarService;
     private final SettingsService settingsService;
 
-
-    @Autowired
-    public PostService(PostRepository postRepository, PostCommentRepository postCommentRepository,
-                       Tag2PostRepository tag2PostRepository, TagRepository tagRepository,
-                       UserRepository userRepository, PostVotesRepository postVotesRepository,
-                       ArrayService arrayService, CalendarService calendarService,
-                       SettingsService settingsService) {
-        this.postRepository = postRepository;
-        this.postCommentRepository = postCommentRepository;
-        this.tag2PostRepository = tag2PostRepository;
-        this.tagRepository = tagRepository;
-        this.userRepository = userRepository;
-        this.postVotesRepository = postVotesRepository;
-        this.arrayService = arrayService;
-        this.calendarService = calendarService;
-        this.settingsService = settingsService;
-    }
-
     public ResponseEntity<PostsResponse> postsForMainPage(String mode, int offset, int limit){
-        Pageable pageable = null;
+        Pageable pageable = PageRequest.of(offset/limit, limit);
+        List<Post> posts = null;
+        PostsResponse postsResponse = null;
+        LocalDateTime currentTime = LocalDateTime.now();
         switch (mode) {
             case "recent": {
-                Sort sort = Sort.by(Sort.Direction.DESC, "time");
-                pageable = PageRequest.of(offset/limit, limit, sort);
+                posts = postRepository.findRecentPosts(currentTime, pageable);
             }
                 break;
             case "early": {
-                Sort sort = Sort.by(Sort.Direction.ASC, "time");
-                pageable = PageRequest.of(offset/limit, limit, sort);
+                posts = postRepository.findOldPosts(currentTime, pageable);
             }
                 break;
             case "popular":{
-                Sort.TypedSort<Post> sort = Sort.sort(Post.class);
-                sort.by(Post::getPostCommentsSize);
-                sort.descending();
-                pageable = PageRequest.of(offset/limit, limit, sort);
+                posts = postRepository.findMostCommentedPosts(currentTime, pageable);
             }
                 break;
             case "best": {
-                Sort.TypedSort<Post> sort = Sort.sort(Post.class);
-                sort.by(Post::getLikeCount);
-                sort.descending();
-                pageable = PageRequest.of(offset/limit, limit, sort);
+                posts = postRepository.findBestPosts(currentTime, pageable);
             }
                 break;
         }
-        return ResponseEntity.ok().body(findAllWithPageable(pageable));
+        postsResponse = new PostsResponse(posts);
+        return ResponseEntity.ok().body(postsResponse);
     }
     public ResponseEntity<PostsResponse> searchPosts(int offset, int limit, String query) {
         Pageable pageable = PageRequest.of(offset, limit);
@@ -159,7 +139,7 @@ public class PostService {
         Pageable pageable = PageRequest.of(offset, limit);
         LocalDateTime startTime = calendarService.getStartTime(dateComponents);
         LocalDateTime endTime = calendarService.getEndTime(dateComponents);
-        ArrayList<Post> posts = postRepository.findAllByDate(startTime, endTime, pageable);
+        List<Post> posts = postRepository.findAllByDate(startTime, endTime, pageable);
         return assemblingGroupOfPosts(posts);
     }
 
@@ -171,7 +151,7 @@ public class PostService {
     }
 
     public ResponseEntity<PostsResponse> getPostForModeration(int offset, int limit, String status) {
-        ArrayList<Post> posts;
+        List<Post> posts;
         Pageable pageable = PageRequest.of(offset, limit);
         switch (status) {
             case "new":
@@ -186,7 +166,7 @@ public class PostService {
     public ResponseEntity<PostsResponse> getMyPosts(int offset, int limit, String status, Principal principal) {
         User user = userRepository.findByEmail(principal.getName()).get();
         status = status.equals("pending") ? "NEW" : status.equals("declined") ? "DECLINED" : status.equals("published")? "ACCEPTED" : "INACTIVE";
-        ArrayList<Post> posts;
+        List<Post> posts;
         Pageable pageable = PageRequest.of(offset, limit);
         switch (status) {
             case "INACTIVE":
@@ -199,7 +179,7 @@ public class PostService {
         return assemblingGroupOfPosts(posts);
     }
 
-    public ResponseEntity<PostsResponse> assemblingGroupOfPosts( ArrayList<Post> posts){
+    public ResponseEntity<PostsResponse> assemblingGroupOfPosts(List<Post> posts){
         switch (posts.size()) {
             case 0:
                 return ResponseEntity.ok().body(PostsResponse.getEmptyResonse());
@@ -366,7 +346,7 @@ public class PostService {
 
     public ResponseEntity<StatisticAnswer> myStatistic(Principal principal){
         User user = userRepository.findByEmail(principal.getName()).get();
-        ArrayList<Post> posts = postRepository.myPosts(user.getId(), "ACCEPTED");
+        List<Post> posts = postRepository.myPosts(user.getId(), "ACCEPTED");
         return getStatistic(posts);
     }
 
@@ -374,7 +354,7 @@ public class PostService {
         if(unauthorizedError(principal)){
             return ResponseEntity.status(401).build();
         }
-        ArrayList<Post> posts = postRepository.findAllActive(LocalDateTime.now());
+        List<Post> posts = postRepository.findAllActive(LocalDateTime.now());
         return getStatistic(posts);
     }
 
@@ -406,7 +386,7 @@ public class PostService {
         return globalStatisticSetting.equals("NO");
     }
 
-    private ResponseEntity<StatisticAnswer> getStatistic(ArrayList<Post> posts){
+    private ResponseEntity<StatisticAnswer> getStatistic(List<Post> posts){
         StatisticAnswer answer = new StatisticAnswer();
         answer.setPostsCount(posts.size());
         final long[] likeCount = {0};

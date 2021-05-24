@@ -1,19 +1,16 @@
 package main.service;
 
+import lombok.AllArgsConstructor;
 import main.model.GlobalSetting;
 import main.repository.GlobalSettingsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
+@AllArgsConstructor
 public class SettingsService {
 
-    private GlobalSettingsRepository globalSettingsRepository;
-
-    @Autowired
-    public SettingsService(GlobalSettingsRepository globalSettingsRepository){
-        this.globalSettingsRepository = globalSettingsRepository;
-    }
+    private final GlobalSettingsRepository globalSettingsRepository;
 
     public GlobalSetting getUserMode(){
         return globalSettingsRepository.findByCode("MULTIUSER_MODE").get();

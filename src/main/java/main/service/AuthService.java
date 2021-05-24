@@ -1,5 +1,6 @@
 package main.service;
 
+import lombok.AllArgsConstructor;
 import main.api.responseAndAnswers.auth.LoginResponse;
 import main.api.responseAndAnswers.auth.UserLoginResponse;
 import main.api.responseAndAnswers.auth.*;
@@ -7,6 +8,7 @@ import main.model.CaptchaCode;
 import main.model.User;
 import main.repository.CaptchaCodeRepository;
 import main.repository.UserRepository;
+import org.hibernate.annotations.Loader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -22,27 +24,14 @@ import java.util.UUID;
 
 @Service
 @EnableScheduling
+@AllArgsConstructor
 public class AuthService {
 
-    private UserRepository userRepository;
-
-    private CaptchaCodeRepository captchaCodeRepository;
-
-    private RandomGenerator randomGenerator;
-
-    private MailSender mailSender;
-
-    private BCryptPasswordEncoder passwordEncoder;
-
-    @Autowired
-    public AuthService(UserRepository userRepository, CaptchaCodeRepository captchaCodeRepository,
-                       RandomGenerator randomGenerator, MailSender mailSender) {
-        this.userRepository = userRepository;
-        this.captchaCodeRepository = captchaCodeRepository;
-        this.randomGenerator = randomGenerator;
-        this.mailSender = mailSender;
-        passwordEncoder = new BCryptPasswordEncoder(12);
-    }
+    private final UserRepository userRepository;
+    private final CaptchaCodeRepository captchaCodeRepository;
+    private final RandomGenerator randomGenerator;
+    private final MailSender mailSender;
+    private final BCryptPasswordEncoder passwordEncoder ;
 
     public LoginResponse getLoginResponse(String email) {
         main.model.User currentUser = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(email));
