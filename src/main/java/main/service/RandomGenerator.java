@@ -4,10 +4,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.Random;
 
-@Service
+
 public class RandomGenerator {
 
-    public String generate(int length){
+    public static String generate(int length){
         Random randomGenerator = new Random();
         String path = randomGenerator.ints(48, 122)
                 .filter(i -> (i < 57 || i > 65) && (i < 90 || i > 97))

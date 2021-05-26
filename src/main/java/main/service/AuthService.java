@@ -1,5 +1,6 @@
 package main.service;
 
+import com.github.cage.Cage;
 import lombok.AllArgsConstructor;
 import main.api.responseAndAnswers.auth.LoginResponse;
 import main.api.responseAndAnswers.auth.UserLoginResponse;
@@ -8,15 +9,18 @@ import main.model.CaptchaCode;
 import main.model.User;
 import main.repository.CaptchaCodeRepository;
 import main.repository.UserRepository;
-import org.hibernate.annotations.Loader;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.awt.image.BufferedImage;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -29,9 +33,22 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final CaptchaCodeRepository captchaCodeRepository;
-    private final RandomGenerator randomGenerator;
     private final MailSender mailSender;
-    private final BCryptPasswordEncoder passwordEncoder ;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final ImageService imageService;
+    private final SettingsService settingsService;
+    private final AuthenticationManager authenticationManager;
+
+    public ResponseEntity<LoginResponse> login(LoginRequest loginRequest){
+        main.model.User currentUser = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(() -> new UsernameNotFoundException(loginRequest.getEmail()));
+        Authentication auth = authenticationManager.
+                authenticate(
+                        new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) auth.getPrincipal();
+        LoginResponse loginResponse = getLoginResponse(user.getUsername());
+        return ResponseEntity.ok().body(loginResponse);
+    }
 
     public LoginResponse getLoginResponse(String email) {
         main.model.User currentUser = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(email));
@@ -51,7 +68,7 @@ public class AuthService {
     public ResponseEntity<RestoreResponse> letterSend(Optional<main.model.User> user, RestoreRequest restoreRequest){
         main.model.User userGet = user.get();
         int length = 64;
-        String code = randomGenerator.generate(length);
+        String code = RandomGenerator.generate(length);
         userGet.setCode(code);
         mailSender.send(restoreRequest.getEmail(), "Восстановление пароля", "Ссылка для восстановление пароля: http://localhost:8080/login/change-password/" + code);
         userRepository.save(userGet);
@@ -176,6 +193,17 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    public ResponseEntity<CaptchaResponse> captcha(){
+        String randomString = RandomGenerator.generate(8);
+        String identification = generateSpecialCode();
+        Cage cage = new Cage();
+        BufferedImage image = imageService.resizeCaptchaImage(cage.drawImage(randomString));
+        String code = imageService.convertToBase64(image);
+        CaptchaResponse captchaResponse = new CaptchaResponse(identification, code);
+        addCaptchaToDB(captchaResponse, randomString);
+        return ResponseEntity.ok().body(captchaResponse);
+    }
+
     public String generateSpecialCode() {
         boolean isInDB = true;
         String code = "";
@@ -194,6 +222,33 @@ public class AuthService {
         captchaCode.setSecretCode(captchaResponse.getSecret());
         captchaCode.setTime(LocalDateTime.now(ZoneOffset.UTC));
         captchaCodeRepository.save(captchaCode);
+    }
+
+    public String logout(){
+        SecurityContextHolder.clearContext();
+        LogoutResponse response = new LogoutResponse();
+        response.setResult(true);
+        return "index";
+    }
+
+    public ResponseEntity<RegisterResponse> register(RegisterRequest request){
+        if(!settingsService.getUserMode().getValue().equals("YES")){
+            return ResponseEntity.notFound().build();
+        }
+        RegisterResponse response = findErrors(request);
+        if (response.isResult()) {
+           addUserToDB(request);
+        }
+        return ResponseEntity.ok().body(response);
+    }
+
+    public ResponseEntity<RestoreResponse> restore(RestoreRequest restoreRequest){
+        Optional<main.model.User> user = userRepository.findByEmail(restoreRequest.getEmail());
+        if(user.isPresent()){
+            return letterSend(user, restoreRequest);
+        } else {
+            return userNotFound();
+        }
     }
 
     @Scheduled(fixedRate = 3600000)

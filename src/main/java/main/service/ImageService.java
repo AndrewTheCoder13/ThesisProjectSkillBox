@@ -1,7 +1,7 @@
 package main.service;
 
 import lombok.AllArgsConstructor;
-import main.api.responseAndAnswers.profile.ProfileErrors;
+import lombok.NoArgsConstructor;
 import main.model.User;
 import main.repository.UserRepository;
 import marvin.image.MarvinImage;
@@ -9,7 +9,8 @@ import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
 import org.marvinproject.image.transform.scale.Scale;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -26,25 +26,27 @@ import java.security.Principal;
 import java.util.Base64;
 import java.util.InvalidPropertiesFormatException;
 import java.util.List;
-import java.util.Random;
 
 @Service
-@AllArgsConstructor
 @Component
 public class ImageService {
 
     private final UserRepository userRepository;
-    private final RandomGenerator randomGenerator;
-    @Value("${blog.files.max_file_size}")
-    private final int MAX_FILE_SIZE;
+    private int maxFileSize;
+
+    @Autowired
+    public ImageService(UserRepository userRepository,  @Value("${blog.files.maxFileSize}")int maxFileSize){
+        this.userRepository = userRepository;
+        this.maxFileSize = maxFileSize;
+    }
 
     public String saveImageToServer(MultipartFile file) throws SizeLimitExceededException, IOException {
         long size = file.getSize();
-        if(size > MAX_FILE_SIZE){
+
+        if(size > maxFileSize){
             throw new SizeLimitExceededException("Файл слишком большой", 5, size);
         }
-
-        java.util.List<String> allowedFormats = List.of("jpg", "jpeg", "png");
+        List<String> allowedFormats = List.of("jpg", "jpeg", "png");
 
         String format = file.getContentType().substring(file.getContentType().indexOf("/") + 1);
         if(!allowedFormats.contains(format)){
@@ -59,7 +61,7 @@ public class ImageService {
 
     public String image(MultipartFile file, boolean resize, Principal principal) throws IOException {
         String format = file.getContentType().substring(file.getContentType().indexOf("/") + 1);
-        String path = randomGenerator.generate(11);
+        String path = RandomGenerator.generate(11);
         File image = getImageFile(format, path);
         file.transferTo(Paths.get(image.getPath()));
         if (resize) {
@@ -112,7 +114,7 @@ public class ImageService {
         return newImage;
     }
 
-    public String formImageToString(BufferedImage image) {
+    public String convertToBase64(BufferedImage image) {
         String encodedImage = "data:image/png;base64, ";
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {

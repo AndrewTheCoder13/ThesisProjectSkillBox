@@ -79,8 +79,8 @@ public class ApiGeneralController {
     }
 
     @GetMapping("/api/calendar")
-    public ResponseEntity<CalendarResponse> calendar(@RequestParam Map<String, String> allParams){
-        return  calendarService.calendar(allParams);
+    public ResponseEntity<CalendarResponse> calendar(@RequestParam(required = false, defaultValue = "0") int year){
+        return calendarService.calendar();
     }
 
     @PreAuthorize("hasAuthority('user:write')")

@@ -25,15 +25,15 @@ spring:
           ssl:
             enable: true
 
-
-blog.title: ITsociety
-blog.subtitle: Рассказы разработчиков
-blog.phone: +373 686-544-17
-blog.email: andreiciugreanu7@mail.com
-blog.copyright: Андрей Чугурну
-blog.copyrightFrom: 2020
-
-blog.mailbot.password: ${MAIL_PASSWORD}
-blog.mailbot.username: springrobot
-#5mb
-blog.files.max_file_size: 5242880
+blog:
+  title: ITsociety
+  subtitle: Рассказы разработчиков
+  phone: +373 686-544-17
+  email: andreiciugreanu7@mail.com
+  copyright: Андрей Чугурну
+  copyrightFrom: 2020
+  files:
+    maxFileSize: 5242880
+  mailbot:
+    password: ${MAIL_PASSWORD}
+    username: springrobot

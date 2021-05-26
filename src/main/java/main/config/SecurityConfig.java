@@ -2,6 +2,7 @@ package main.config;
 
 
 import main.security.UserDetailsServiceImpl;
+import main.service.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;

@@ -17,7 +17,7 @@ public class CalendarService {
 
     private final PostRepository postRepository;
 
-    public ResponseEntity<CalendarResponse> calendar(@RequestParam Map<String, String> allParams) {
+    public ResponseEntity<CalendarResponse> calendar() {
         CalendarResponse response = new CalendarResponse();
         TreeMap<String, Integer> posts = new TreeMap<>();
         List<LocalDateTime> time = postRepository.years();
