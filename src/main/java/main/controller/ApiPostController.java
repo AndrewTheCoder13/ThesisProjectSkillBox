@@ -74,7 +74,7 @@ public class ApiPostController {
     @PreAuthorize("hasAuthority('user:write')")
     @PostMapping("")
     public ResponseEntity<PutPostResponse> putPost(Principal principal, @RequestBody PostAdd postForAdd){
-        return postService.putOrEditPost(principal, postForAdd, -1);
+        return postService.putOrEditPost(principal, postForAdd);
     }
 
     @PreAuthorize("hasAuthority('user:write')")

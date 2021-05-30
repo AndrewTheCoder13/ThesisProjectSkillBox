@@ -76,14 +76,14 @@ public class CalendarService {
         return index;
     }
 
-    public LocalDateTime getStartTime(String dateComponents[]){
+    public LocalDateTime getStartTime(String[] dateComponents){
         int year = Integer.parseInt(dateComponents[0]);
         int mount = Integer.parseInt(dateComponents[1]);
         int day = Integer.parseInt(dateComponents[2]);
         return LocalDateTime.of(year, mount, day, 0, 0);
     }
 
-    public LocalDateTime getEndTime(String dateComponents[]){
+    public LocalDateTime getEndTime(String[] dateComponents){
         int year = Integer.parseInt(dateComponents[0]);
         int mount = Integer.parseInt(dateComponents[1]);
         int day = Integer.parseInt(dateComponents[2]);

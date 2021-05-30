@@ -9,7 +9,6 @@ import main.api.responseAndAnswers.post.ModerationAnswer;
 import main.api.responseAndAnswers.post.ModerationRequest;
 import main.api.responseAndAnswers.profile.ProfileChange;
 import main.api.responseAndAnswers.profile.ProfileChangeAnswer;
-import main.api.responseAndAnswers.profile.ProfileErrors;
 import main.api.responseAndAnswers.settings.GlobalSettingsResponse;
 import main.api.responseAndAnswers.settings.SaveSettingsAnswer;
 import main.api.responseAndAnswers.settings.SaveSettingsRequest;
@@ -19,12 +18,9 @@ import main.model.GlobalSetting;
 import main.repository.GlobalSettingsRepository;
 import main.service.*;
 import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,7 +30,6 @@ import java.security.Principal;
 import java.util.*;
 
 @RestController("/api")
-@RequestMapping("/api")
 @AllArgsConstructor
 @Component
 public class ApiGeneralController {
@@ -45,10 +40,8 @@ public class ApiGeneralController {
     private final ProfileService profileService;
     private final CalendarService calendarService;
     private final PostService postService;
-    private final BCryptPasswordEncoder passwordEncoder;
     private final InitResponse initResponse;
-    @Value("${blog.files.max_file_size}")
-    private final int MAX_FILE_SIZE;
+    private final SettingsService settingsService;
 
     @GetMapping("/api/init")
     public ResponseEntity<InitResponse> init() {
@@ -122,17 +115,6 @@ public class ApiGeneralController {
     @PreAuthorize("hasAuthority('user:moderate')")
     @PutMapping("/api/settings")
     public ResponseEntity<SaveSettingsAnswer> saveSettings(@RequestBody SaveSettingsRequest saveSettingsRequest) {
-        SaveSettingsAnswer saveSettingsAnswer = new SaveSettingsAnswer();
-        saveSettingsAnswer.setResult(true);
-        GlobalSetting multiUserMode = globalSettingsRepository.findByCode("MULTIUSER_MODE").get();
-        multiUserMode.setValue(saveSettingsRequest.isMultiUserMode()? "YES" : "NO");
-        GlobalSetting postPreModeration = globalSettingsRepository.findByCode("POST_PREMODERATION").get();
-        postPreModeration.setValue(saveSettingsRequest.isPostPreModeration()? "YES" : "NO");
-        GlobalSetting statisticIsPublic = globalSettingsRepository.findByCode("STATISTICS_IS_PUBLIC").get();
-        statisticIsPublic.setValue(saveSettingsRequest.isStatisticsIsPublic()? "YES" : "NO");
-        globalSettingsRepository.save(multiUserMode);
-        globalSettingsRepository.save(postPreModeration);
-        globalSettingsRepository.save(statisticIsPublic);
-        return ResponseEntity.ok().body(saveSettingsAnswer);
+        return settingsService.saveSetting(saveSettingsRequest);
     }
 }

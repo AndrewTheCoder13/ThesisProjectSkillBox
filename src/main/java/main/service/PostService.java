@@ -9,17 +9,13 @@ import main.api.responseAndAnswers.post.*;
 import main.api.responseAndAnswers.user.StatisticAnswer;
 import main.model.*;
 import main.repository.*;
-import org.javatuples.Triplet;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 
-import javax.validation.constraints.NotNull;
 import java.nio.file.AccessDeniedException;
 import java.security.Principal;
 import java.sql.Timestamp;
@@ -35,15 +31,14 @@ public class PostService {
     private final Tag2PostRepository tag2PostRepository;
     private final TagRepository tagRepository;
     private final UserRepository userRepository;
-    private final PostVotesRepository postVotesRepository;
-    private final ArrayService arrayService;
+    private final PostVotesRepository postVotesRepository;;
     private final CalendarService calendarService;
     private final SettingsService settingsService;
 
     public ResponseEntity<PostsResponse> postsForMainPage(String mode, int offset, int limit){
         Pageable pageable = PageRequest.of(offset/limit, limit);
-        List<Post> posts = null;
-        PostsResponse postsResponse = null;
+        Page<Post> posts = null;
+        PostsResponse postsResponse;
         LocalDateTime currentTime = LocalDateTime.now();
         switch (mode) {
             case "recent": {
@@ -66,20 +61,65 @@ public class PostService {
         postsResponse = new PostsResponse(posts);
         return ResponseEntity.ok().body(postsResponse);
     }
+
     public ResponseEntity<PostsResponse> searchPosts(int offset, int limit, String query) {
         Pageable pageable = PageRequest.of(offset, limit);
         if (query == null) {
             return ResponseEntity.ok().body(findAllWithPageable(pageable));
         } else {
-            List<Post> posts = postRepository.searchPostsByQuery(query, LocalDateTime.now(), pageable);
+            Page<Post> posts = postRepository.searchPostsByQuery(query, LocalDateTime.now(), pageable);
             PostsResponse response = posts == null ? PostsResponse.getEmptyResonse() : new PostsResponse(posts);
             return ResponseEntity.ok().body(response);
         }
     }
 
     public PostsResponse findAllWithPageable(Pageable pageable) {
-        List<Post> posts = postRepository.finAllWithPageable(LocalDateTime.now(), pageable);
+        Page<Post> posts = postRepository.finAllWithPageable(LocalDateTime.now(), pageable);
         return new PostsResponse(posts);
+    }
+
+    public ResponseEntity<PostsResponse> searchPostsByDate(int offset, int limit, String date) {
+        String dateComponents[] = date.split("-");
+        Pageable pageable = PageRequest.of(offset, limit);
+        LocalDateTime startTime = calendarService.getStartTime(dateComponents);
+        LocalDateTime endTime = calendarService.getEndTime(dateComponents);
+        Page<Post> posts = postRepository.findAllByDate(startTime, endTime, pageable);
+        return assemblingGroupOfPosts(posts);
+    }
+
+    public ResponseEntity<PostsResponse> getPostByTag(int offset, int limit, String tagName) {
+        int tagId = tagRepository.getTagByName(tagName).get().getId();
+        Pageable pageable = PageRequest.of(offset, limit);
+        Page<Post> posts = tag2PostRepository.findsPosts(tagId, LocalDateTime.now(), pageable);
+        return assemblingGroupOfPosts(posts);
+    }
+
+    public ResponseEntity<PostsResponse> getPostForModeration(int offset, int limit, String status) {
+        Page<Post> posts;
+        Pageable pageable = PageRequest.of(offset, limit);
+        switch (status) {
+            case "new":
+                posts = postRepository.findNew(pageable);
+                break;
+            default:
+                posts = postRepository.findMyModeration(1, status, pageable);
+        }
+        return assemblingGroupOfPosts(posts);
+    }
+
+    public ResponseEntity<PostsResponse> getMyPosts(int offset, int limit, String status, Principal principal) {
+        User user = userRepository.findByEmail(principal.getName()).get();
+        status = status.equals("pending") ? "NEW" : status.equals("declined") ? "DECLINED" : status.equals("published")? "ACCEPTED" : "INACTIVE";
+        Page<Post> posts;
+        Pageable pageable = PageRequest.of(offset, limit);
+        switch (status) {
+            case "INACTIVE":
+                posts = postRepository.myPostsInactive(user.getId(), pageable);
+                break;
+            default:
+                posts = postRepository.myPostsWithStatus(user.getId(), status, pageable);
+        }
+        return assemblingGroupOfPosts(posts);
     }
 
     public ResponseEntity<GetPostResponse> findById(int id, Principal principal) {
@@ -95,7 +135,7 @@ public class PostService {
         }
         Post getPost = firstPost;
         changeNumberOfViews(principal, getPost);
-        return ResponseEntity.ok().body(formattingPostForAnswer(id, getPost));
+        return ResponseEntity.ok().body(formingPostForAnswer(id, getPost));
     }
 
     private Post findAlternativePost(Principal principal, int id) throws NotFoundException, AccessDeniedException {
@@ -126,70 +166,11 @@ public class PostService {
         }
     }
 
-    private GetPostResponse formattingPostForAnswer(int id, Post getPost){
-        List<TagToPost> tags = tag2PostRepository.findPostById(id);
-        List<PostComment> postComments = postCommentRepository.findByPostId(id);
-        GetPostResponse response = new GetPostResponse();
-        response.formatingAnswer(getPost, postComments, tags);
-        return response;
+    public ResponseEntity<PutPostResponse> putOrEditPost(Principal principal, PostAdd postForAdd){
+        return putOrEditPost(principal, postForAdd, -1);
     }
 
-    public ResponseEntity<PostsResponse> searchPostsByDate(int offset, int limit, String date) {
-        String dateComponents[] = date.split("-");
-        Pageable pageable = PageRequest.of(offset, limit);
-        LocalDateTime startTime = calendarService.getStartTime(dateComponents);
-        LocalDateTime endTime = calendarService.getEndTime(dateComponents);
-        List<Post> posts = postRepository.findAllByDate(startTime, endTime, pageable);
-        return assemblingGroupOfPosts(posts);
-    }
-
-    public ResponseEntity<PostsResponse> getPostByTag(int offset, int limit, String tagName) {
-        int tagId = tagRepository.getTagByName(tagName).get().getId();
-        Pageable pageable = PageRequest.of(offset, limit);
-        ArrayList<Post> posts = (ArrayList<Post>) tag2PostRepository.findsPosts(tagId, LocalDateTime.now(), pageable);
-        return assemblingGroupOfPosts(posts);
-    }
-
-    public ResponseEntity<PostsResponse> getPostForModeration(int offset, int limit, String status) {
-        List<Post> posts;
-        Pageable pageable = PageRequest.of(offset, limit);
-        switch (status) {
-            case "new":
-                posts = postRepository.findNew(pageable);
-                break;
-            default:
-                posts = postRepository.findMyModeration(1, status, pageable);
-        }
-        return assemblingGroupOfPosts(posts);
-    }
-
-    public ResponseEntity<PostsResponse> getMyPosts(int offset, int limit, String status, Principal principal) {
-        User user = userRepository.findByEmail(principal.getName()).get();
-        status = status.equals("pending") ? "NEW" : status.equals("declined") ? "DECLINED" : status.equals("published")? "ACCEPTED" : "INACTIVE";
-        List<Post> posts;
-        Pageable pageable = PageRequest.of(offset, limit);
-        switch (status) {
-            case "INACTIVE":
-                posts = postRepository.myPostsInactive(user.getId(), pageable);
-                break;
-            default:
-                posts = postRepository.myPostsWithStatus(user.getId(), status, pageable);
-                posts.sort(Comparator.comparing(Post::getTime).reversed());
-        }
-        return assemblingGroupOfPosts(posts);
-    }
-
-    public ResponseEntity<PostsResponse> assemblingGroupOfPosts(List<Post> posts){
-        switch (posts.size()) {
-            case 0:
-                return ResponseEntity.ok().body(PostsResponse.getEmptyResonse());
-            default: {
-                return ResponseEntity.ok().body(new PostsResponse(posts));
-            }
-        }
-    }
-
-    public ResponseEntity<PutPostResponse> putOrEditPost(Principal principal, @RequestBody PostAdd postForAdd, int id) {
+    public ResponseEntity<PutPostResponse> putOrEditPost(Principal principal, PostAdd postForAdd, int id) {
         PutPostResponse postResponse = findErrors(postForAdd);
         if (postResponse.isResult()) {
             Post post = makePost(principal, postForAdd, id);
@@ -198,6 +179,44 @@ public class PostService {
             checkAndAddTags(tags, post);
         }
         return ResponseEntity.ok().body(postResponse);
+    }
+
+    private Post makePost(Principal principal, @RequestBody PostAdd postForAdd, int idGot){
+        User user = userRepository.findByEmail(principal.getName()).get();
+        long id = idGot != -1? idGot : postRepository.count() + 1;
+        Post post = new Post();
+        post.setId((int) id);
+        Timestamp stamp = new Timestamp(postForAdd.getTimestamp() * 1000);
+        LocalDateTime currentTime = LocalDateTime.now();
+        post.setUser(user);
+        post.setTime(currentTime.isAfter(stamp.toLocalDateTime()) ? currentTime : stamp.toLocalDateTime());
+        post.setIsActive(postForAdd.getActive());
+        post.setTitle(postForAdd.getTitle());
+        post.setText(postForAdd.getText());
+        post.setModerationStatus(settingsService.getPostModerationMode().getValue().equals("YES") ?
+                ModerationStatus.NEW : ModerationStatus.ACCEPTED);
+        post.setDislikeVotes(new ArrayList<PostVote>());
+        post.setLikeVotes(new ArrayList<PostVote>());
+        post.setPostComments(new ArrayList<PostComment>());
+        return post;
+    }
+
+    private GetPostResponse formingPostForAnswer(int id, Post getPost){
+        List<TagToPost> tags = tag2PostRepository.findPostById(id);
+        List<PostComment> postComments = postCommentRepository.findByPostId(id);
+        GetPostResponse response = new GetPostResponse();
+        response.formatingAnswer(getPost, postComments, tags);
+        return response;
+    }
+
+    public ResponseEntity<PostsResponse> assemblingGroupOfPosts(Page<Post> posts){
+        switch((int)posts.getTotalElements()) {
+            case 0:
+                return ResponseEntity.ok().body(PostsResponse.getEmptyResonse());
+            default: {
+                return ResponseEntity.ok().body(new PostsResponse(posts));
+            }
+        }
     }
 
     public PutPostResponse findErrors(PostAdd postForAdd) {
@@ -227,26 +246,6 @@ public class PostService {
         } else if (text.length() < 10) {
             errors.setText("Текст публикации слишком короткий");
         }
-    }
-
-    private Post makePost(Principal principal, @RequestBody PostAdd postForAdd, int idGetted){
-        User user = userRepository.findByEmail(principal.getName()).get();
-        long id = idGetted != -1? idGetted : postRepository.count() + 1;
-        Post post = new Post();
-        post.setId((int) id);
-        Timestamp stamp = new Timestamp(postForAdd.getTimestamp() * 1000);
-        LocalDateTime currentTime = LocalDateTime.now();
-        post.setUser(user);
-        post.setTime(currentTime.isAfter(stamp.toLocalDateTime()) ? currentTime : stamp.toLocalDateTime());
-        post.setIsActive(postForAdd.getActive());
-        post.setTitle(postForAdd.getTitle());
-        post.setText(postForAdd.getText());
-        post.setModerationStatus(settingsService.getPostModerationMode().getValue().equals("YES") ?
-                ModerationStatus.NEW : ModerationStatus.ACCEPTED);
-        post.setDislikeVotes(new ArrayList<PostVote>());
-        post.setLikeVotes(new ArrayList<PostVote>());
-        post.setPostComments(new ArrayList<PostComment>());
-        return post;
     }
 
     private void checkAndAddTags(String[] tags, Post post) {
@@ -330,6 +329,10 @@ public class PostService {
             PutCommentAnswer answer = new PutCommentAnswer(null, false, new CommentErrors("Текст комментария не задан или слишком короткий"));
             return ResponseEntity.ok().body(answer);
         }
+        return saveCommentInfo(post, user, parent, request);
+    }
+
+    private ResponseEntity<PutCommentAnswer> saveCommentInfo(Optional<Post> post, Optional<User> user, Optional<PostComment> parent, PutCommentRequest request){
         Post postReal = post.get();
         User userReal = user.get();
         PostComment parentReal = parent.isPresent()? parent.get() : null;

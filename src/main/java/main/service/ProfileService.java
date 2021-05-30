@@ -19,15 +19,22 @@ import java.security.Principal;
 import java.util.Optional;
 
 @Service
-@AllArgsConstructor
 @Component
 public class ProfileService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
-    @Value("${blog.files.max_file_size}")
     private final int MAX_FILE_SIZE;
     private final ImageService imageService;
+
+    public ProfileService(UserRepository userRepository,
+                          BCryptPasswordEncoder passwordEncoder, @Value("${blog.files.maxFileSize}") int MAX_FILE_SIZE,
+                          ImageService imageService) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.MAX_FILE_SIZE = MAX_FILE_SIZE;
+        this.imageService = imageService;
+    }
 
     public ResponseEntity<ProfileChangeAnswer> editProfile(MultipartFile photo, String name, String email, String password, Principal principal) throws IOException {
         ProfileChange change = new ProfileChange(name,0, email, password, "");

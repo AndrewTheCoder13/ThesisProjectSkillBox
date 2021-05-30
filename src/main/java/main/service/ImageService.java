@@ -1,7 +1,5 @@
 package main.service;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import main.model.User;
 import main.repository.UserRepository;
 import marvin.image.MarvinImage;
@@ -9,8 +7,6 @@ import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
 import org.marvinproject.image.transform.scale.Scale;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,7 +28,7 @@ import java.util.List;
 public class ImageService {
 
     private final UserRepository userRepository;
-    private int maxFileSize;
+    private final int maxFileSize;
 
     @Autowired
     public ImageService(UserRepository userRepository,  @Value("${blog.files.maxFileSize}")int maxFileSize){

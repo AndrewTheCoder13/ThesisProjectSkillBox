@@ -22,15 +22,6 @@ public class PostsResponse {
         posts = new ArrayList<>();
     }
 
-    public PostsResponse(List<Post> receivedPosts) {
-        posts = new ArrayList<>();
-        count = receivedPosts.size();
-        receivedPosts.forEach(post -> {
-            SearchPostResponse postResponse = new SearchPostResponse(post);
-            posts.add(postResponse);
-        });
-    }
-
     public PostsResponse(Page<Post> receivedPosts){
         posts = new ArrayList<>();
         count = receivedPosts.getTotalElements();
