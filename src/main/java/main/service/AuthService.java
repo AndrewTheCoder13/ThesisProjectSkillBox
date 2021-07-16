@@ -70,7 +70,7 @@ public class AuthService {
         int length = 64;
         String code = RandomGenerator.generate(length);
         userGet.setCode(code);
-        mailSender.send(restoreRequest.getEmail(), "Восстановление пароля", "Ссылка для восстановление пароля: http://localhost:8080/login/change-password/" + code);
+        mailSender.send(restoreRequest.getEmail(), "Восстановление пароля", "Ссылка для восстановление пароля: \n https://sping-boot-aplication-skillbox.herokuapp.com/login/change-password/" + code);
         userRepository.save(userGet);
         RestoreResponse response = new RestoreResponse();
         response.setResult(true);

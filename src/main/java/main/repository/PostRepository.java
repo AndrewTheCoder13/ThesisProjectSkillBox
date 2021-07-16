@@ -1,5 +1,6 @@
 package main.repository;
 
+import main.model.ModerationStatus;
 import main.model.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,11 +47,11 @@ public interface PostRepository extends PagingAndSortingRepository<Post, Integer
     @Query("FROM Post p WHERE p.isActive = 1 AND p.moderationStatus = ?2 AND p.moderator = ?1")
     Page<Post> findMyModeration(int id,String mode, Pageable pageable);
 
-    @Query("FROM Post p WHERE p.isActive = 0 AND p.user = ?1")
+    @Query("FROM Post p WHERE p.isActive = 0 AND p.user.id = ?1")
     Page<Post> myPostsInactive(int id, Pageable pageable);
 
-    @Query("FROM Post p WHERE p.isActive = 1 AND p.user = ?1 AND p.moderationStatus = ?2 ORDER BY p.time DESC")
-    Page<Post> myPostsWithStatus(int id, String status, Pageable pageable);
+    @Query("FROM Post p WHERE p.isActive = 1 AND p.user.id = ?1 AND p.moderationStatus = ?2 ORDER BY p.time DESC")
+    Page<Post> myPostsWithStatus(int id, ModerationStatus status, Pageable pageable);
 
     @Query("FROM Post WHERE is_active = 1 AND user_id = ?1 AND moderation_status = ?2")
     List<Post> myPosts(int id, String status);

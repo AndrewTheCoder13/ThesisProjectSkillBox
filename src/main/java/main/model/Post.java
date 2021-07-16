@@ -12,7 +12,7 @@ import java.util.List;
 @Entity
 @Table(name = "posts")
 @Data
-public class Post{
+public class Post {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -62,15 +62,15 @@ public class Post{
     @JoinColumn(name = "post_id", referencedColumnName = "id", insertable = false, updatable = false)
     private List<PostComment> postComments;
 
-    public Integer getPostCommentsSize(){
+    public Integer getPostCommentsSize() {
         return postComments.size();
     }
 
-    public Integer getLikeCount(){
+    public Integer getLikeCount() {
         return likeVotes.size();
     }
 
-    public int getDifference(){
-        return likeVotes.size()-dislikeVotes.size();
+    public int getDifference() {
+        return likeVotes.size() - dislikeVotes.size();
     }
 }

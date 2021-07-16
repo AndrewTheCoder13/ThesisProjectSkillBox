@@ -117,7 +117,7 @@ public class PostService {
                 posts = postRepository.myPostsInactive(user.getId(), pageable);
                 break;
             default:
-                posts = postRepository.myPostsWithStatus(user.getId(), status, pageable);
+                posts = postRepository.myPostsWithStatus(user.getId(), ModerationStatus.valueOf(status), pageable);
         }
         return assemblingGroupOfPosts(posts);
     }
