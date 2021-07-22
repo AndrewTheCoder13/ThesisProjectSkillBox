@@ -97,12 +97,13 @@ public class PostService {
     public ResponseEntity<PostsResponse> getPostForModeration(int offset, int limit, String status) {
         Page<Post> posts;
         Pageable pageable = PageRequest.of(offset, limit);
+        ModerationStatus moderationStatus = ModerationStatus.valueOf(status.toUpperCase());
         switch (status) {
             case "new":
                 posts = postRepository.findNew(pageable);
                 break;
             default:
-                posts = postRepository.findMyModeration(1, status, pageable);
+                posts = postRepository.findMyModeration(1, moderationStatus, pageable);
         }
         return assemblingGroupOfPosts(posts);
     }

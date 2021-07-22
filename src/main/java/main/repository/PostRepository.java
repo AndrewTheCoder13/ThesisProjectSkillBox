@@ -44,8 +44,8 @@ public interface PostRepository extends PagingAndSortingRepository<Post, Integer
     @Query("FROM Post p WHERE p.isActive = 1 AND p.moderationStatus = 'NEW'")
     Page<Post> findNew(Pageable pageable);
 
-    @Query("FROM Post p WHERE p.isActive = 1 AND p.moderationStatus = ?2 AND p.moderator = ?1")
-    Page<Post> findMyModeration(int id,String mode, Pageable pageable);
+    @Query("FROM Post p WHERE p.isActive = 1 AND p.moderationStatus = ?2 AND p.moderator.id = ?1")
+    Page<Post> findMyModeration(int id,ModerationStatus mode, Pageable pageable);
 
     @Query("FROM Post p WHERE p.isActive = 0 AND p.user.id = ?1")
     Page<Post> myPostsInactive(int id, Pageable pageable);
