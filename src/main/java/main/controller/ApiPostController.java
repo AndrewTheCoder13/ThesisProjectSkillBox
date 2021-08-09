@@ -53,8 +53,9 @@ public class ApiPostController {
     @PreAuthorize("hasAuthority('user:moderate')")
     public ResponseEntity<PostsResponse> getPostForModeration(@RequestParam(required = false, defaultValue = "0") int offset,
                                                               @RequestParam(required = false, defaultValue = "10") int limit,
-                                                              @RequestParam(required = false, defaultValue = "new") String status) {
-        return postService.getPostForModeration(offset, limit, status);
+                                                              @RequestParam(required = false, defaultValue = "new") String status,
+                                                              Principal principal) {
+        return postService.getPostForModeration(offset, limit, status, principal);
     }
 
     @GetMapping("my")

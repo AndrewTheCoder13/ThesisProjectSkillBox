@@ -94,8 +94,9 @@ public class PostService {
         return assemblingGroupOfPosts(posts);
     }
 
-    public ResponseEntity<PostsResponse> getPostForModeration(int offset, int limit, String status) {
+    public ResponseEntity<PostsResponse> getPostForModeration(int offset, int limit, String status, Principal principal) {
         Page<Post> posts;
+        User user = userRepository.findByEmail(principal.getName()).get();
         Pageable pageable = PageRequest.of(offset, limit);
         ModerationStatus moderationStatus = ModerationStatus.valueOf(status.toUpperCase());
         switch (status) {
@@ -103,7 +104,7 @@ public class PostService {
                 posts = postRepository.findNew(pageable);
                 break;
             default:
-                posts = postRepository.findMyModeration(1, moderationStatus, pageable);
+                posts = postRepository.findMyModeration(user.getId(), moderationStatus, pageable);
         }
         return assemblingGroupOfPosts(posts);
     }
