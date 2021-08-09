@@ -403,7 +403,7 @@ public class PostService {
             viewsCount[0] += p.getViewCount();
         });
         posts.sort(Comparator.comparing(Post::getTime));
-        Timestamp timestamp = Timestamp.valueOf(posts.get(1).getTime());
+        Timestamp timestamp = Timestamp.valueOf(posts.get(0).getTime());
         firstPublication = timestamp.getTime();
         answer.setLikesCount(likeCount[0]);
         answer.setDislikesCount(dislikesCount[0]);

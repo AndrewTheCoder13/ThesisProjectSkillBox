@@ -65,23 +65,6 @@ public class AuthService {
         return loginResponse;
     }
 
-    public ResponseEntity<RestoreResponse> letterSend(Optional<main.model.User> user, RestoreRequest restoreRequest){
-        main.model.User userGet = user.get();
-        int length = 64;
-        String code = RandomGenerator.generate(length);
-        userGet.setCode(code);
-        mailSender.send(restoreRequest.getEmail(), "Восстановление пароля", "Ссылка для восстановление пароля: \n https://sping-boot-aplication-skillbox.herokuapp.com/login/change-password/" + code);
-        userRepository.save(userGet);
-        RestoreResponse response = new RestoreResponse();
-        response.setResult(true);
-        return ResponseEntity.ok().body(response);
-    }
-
-    public ResponseEntity<RestoreResponse> userNotFound(){
-        RestoreResponse response = new RestoreResponse();
-        response.setResult(false);
-        return ResponseEntity.ok().body(response);
-    }
 
     public ResponseEntity<PasswordAnswer> password(PasswordRequest request){
         PasswordAnswer answer = new PasswordAnswer();
@@ -134,50 +117,6 @@ public class AuthService {
         return  ResponseEntity.ok().body(answer);
     }
 
-    public RegisterResponse findErrors(RegisterRequest request) {
-        Errors errors = getErrors(request);
-        return errors != null ? new RegisterResponse(false, errors) : new RegisterResponse(true, null);
-    }
-
-    public Errors getErrors(RegisterRequest request) {
-        Errors errors = new Errors();
-        String email = request.getEmail();
-        String name = request.getName();
-        String password = request.getPassword();
-        String captcha = request.getCaptcha();
-        String secret = request.getCaptchaSecret();
-        errorInEmail(errors, email);
-        errorInName(errors, name);
-        errorInPassword(errors, password);
-        errorsInCaptcha(errors, captcha, secret);
-        boolean areErrors = errors.checkErrors();
-        return areErrors? errors : null;
-    }
-
-    public void errorInEmail(Errors errors, String email) {
-        if (userRepository.findByEmail(email).isPresent()) {
-            errors.setEmail("Этот e-mail уже зарегистрирован");
-        }
-    }
-
-    public void errorInName(Errors errors, String name){
-        if(name == null){
-            errors.setName("Имя указано неверно");
-        }
-    }
-
-    public void errorInPassword(Errors errors, String password){
-        if(password.length() < 6){
-            errors.setPassword("Пароль короче 6-ти символов");
-        }
-    }
-
-    private void errorsInCaptcha(Errors errors, String captcha, String secret) {
-        CaptchaCode captchaCode = captchaCodeRepository.getBySecret(secret);
-        if (!captchaCode.getCode().equals(captcha)){
-            errors.setCaptcha("Код с картинки введён неверно");
-        }
-    }
 
     public void addUserToDB(RegisterRequest request){
         String email = request.getEmail();
@@ -242,6 +181,51 @@ public class AuthService {
         return ResponseEntity.ok().body(response);
     }
 
+    public RegisterResponse findErrors(RegisterRequest request) {
+        Errors errors = getErrors(request);
+        return errors != null ? new RegisterResponse(false, errors) : new RegisterResponse(true, null);
+    }
+
+    public Errors getErrors(RegisterRequest request) {
+        Errors errors = new Errors();
+        String email = request.getEmail();
+        String name = request.getName();
+        String password = request.getPassword();
+        String captcha = request.getCaptcha();
+        String secret = request.getCaptchaSecret();
+        errorInEmail(errors, email);
+        errorInName(errors, name);
+        errorInPassword(errors, password);
+        errorsInCaptcha(errors, captcha, secret);
+        boolean areErrors = errors.checkErrors();
+        return areErrors? errors : null;
+    }
+
+    public void errorInEmail(Errors errors, String email) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            errors.setEmail("Этот e-mail уже зарегистрирован");
+        }
+    }
+
+    public void errorInName(Errors errors, String name){
+        if(name == null){
+            errors.setName("Имя указано неверно");
+        }
+    }
+
+    public void errorInPassword(Errors errors, String password){
+        if(password.length() < 6){
+            errors.setPassword("Пароль короче 6-ти символов");
+        }
+    }
+
+    private void errorsInCaptcha(Errors errors, String captcha, String secret) {
+        CaptchaCode captchaCode = captchaCodeRepository.getBySecret(secret);
+        if (!captchaCode.getCode().equals(captcha)){
+            errors.setCaptcha("Код с картинки введён неверно");
+        }
+    }
+
     public ResponseEntity<RestoreResponse> restore(RestoreRequest restoreRequest){
         Optional<main.model.User> user = userRepository.findByEmail(restoreRequest.getEmail());
         if(user.isPresent()){
@@ -249,6 +233,24 @@ public class AuthService {
         } else {
             return userNotFound();
         }
+    }
+
+    public ResponseEntity<RestoreResponse> letterSend(Optional<main.model.User> user, RestoreRequest restoreRequest){
+        main.model.User userGet = user.get();
+        int length = 64;
+        String code = RandomGenerator.generate(length);
+        userGet.setCode(code);
+        mailSender.send(restoreRequest.getEmail(), "Восстановление пароля", "Ссылка для восстановление пароля: \n https://sping-boot-aplication-skillbox.herokuapp.com/login/change-password/" + code);
+        userRepository.save(userGet);
+        RestoreResponse response = new RestoreResponse();
+        response.setResult(true);
+        return ResponseEntity.ok().body(response);
+    }
+
+    public ResponseEntity<RestoreResponse> userNotFound(){
+        RestoreResponse response = new RestoreResponse();
+        response.setResult(false);
+        return ResponseEntity.ok().body(response);
     }
 
     @Scheduled(fixedRate = 3600000)
